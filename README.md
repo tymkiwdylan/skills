@@ -2,22 +2,6 @@
 
 Skills para implementar software con agentes: planificar, implementar en worktrees aislados, probar cada cambio con gates y dejar el merge final para revisión humana. Las skills no dependen de ningún proyecto: `setup-workflow` escribe lo propio de cada repo en unos pocos archivos que las skills leen al ejecutarse.
 
-## El flujo de trabajo
-
-**Features grandes: spec → mapa de tickets → workers en paralelo → rama de integración.**
-
-1. Una spec llega al tracker (`to-spec`) y las decisiones quedan en la documentación del repo (`grill-with-docs`, `domain-modeling`).
-2. `create-tickets` la divide en un mapa de tickets: IDs estables (`M2-B1-T03`), criterios de aceptación, ownership y relaciones de bloqueo nativas.
-3. `implement-tickets` ejecuta cada ola de dependencias con workers, cada uno en su propio worktree. Cada PR de ticket apunta a una rama de integración, lo revisa el agente principal y se mergea solo cuando la suite completa pasa sobre el candidato exacto de merge.
-4. El PR de integración hacia la rama base queda en borrador hasta que una persona lo mergea.
-
-**Fixes puntuales: issue → worktree → fix con test primero → PR.**
-
-1. Un issue, un worktree, una rama.
-2. `diagnosing-bugs` hasta que el ciclo quede en rojo, y después `tdd` para el cambio más chico que lo ponga en verde.
-3. `verify` antes del PR; su bloque `GATE`/`VERDICT` va en el cuerpo del PR.
-4. Los hallazgos de una revisión de un PR ya mergeado se resuelven en PRs de seguimiento, no con enmiendas.
-
 ## Skills
 
 | Skill | Qué hace |
@@ -44,6 +28,65 @@ npx skills add tymkiwdylan/skills -s setup-workflow -a claude-code codex -y
 Después, ejecutar `/setup-workflow` en el agente. Explora el repo, propone una respuesta para cada decisión, muestra cada archivo antes de escribirlo, instala el resto de las skills y termina corriendo `verify --plan` contra el historial reciente para que se puedan revisar los gates.
 
 Para actualizar más adelante: `npx skills update -p`. El resto del equipo restaura el conjunto fijado con `npx skills experimental_install`.
+
+## Cómo usarlas
+
+Las skills marcadas como *manual* se invocan con `/nombre` en Claude Code (`$nombre` en Codex). Las demás también se activan solas cuando el pedido coincide con su descripción ("diagnosticá este bug", "revisá el PR 42"), y siempre se pueden invocar a mano.
+
+### Feature nueva: de la idea al PR de integración
+
+1. **Afinar la idea.** `/grill-with-docs` y contarle la idea. Entrevista en rondas, con una respuesta recomendada para cada pregunta, y escribe en el glosario y los ADRs lo que se va resolviendo. Para algo que no toca el dominio alcanza con `grilling` ("grill me sobre esto").
+   - Si una pregunta depende de cómo se ve o se comporta algo: `prototype`.
+   - Si depende de un dato externo (una API, una norma, un portal): `research` lo investiga en segundo plano y deja una nota con fuentes en el repo.
+   - Si la respuesta la tiene otra persona (un cliente, un experto): `/to-questionnaire` arma el documento para mandarle.
+2. **Escribir la spec.** En la misma conversación, `/to-spec`. No pregunta nada nuevo: sintetiza lo hablado y lo publica en el tracker.
+3. **Crear los tickets.** `/create-tickets <spec>`, en la misma conversación o en una nueva (lee la spec del tracker). Revisar el mapa: dependencias, clasificación (`agent-ready`, `HITL`, `gate`…) y las `client-question` abiertas.
+4. **Implementar.** `/implement-tickets <spec o proyecto>`, mejor en una conversación nueva. Trabaja por olas: un PR por ticket hacia la rama de integración, revisado con `review-diff` y mergeado solo con la suite completa en verde. Un bloqueo queda en su ticket con label `HITL` (con un script de `wizard` si es un procedimiento manual) y el resto sigue. Si la sesión se corta, una nueva retoma desde el registro de integración.
+5. **Revisar y mergear.** Termina con un PR en borrador de la rama de integración hacia la base. Ese merge lo hace una persona.
+
+### Bug
+
+1. Pasarle el issue o describir el síntoma. `diagnosing-bugs` arma un ciclo de reproducción hasta que falle por el bug.
+2. `tdd`: primero el test que falla, después el cambio más chico que lo pasa.
+3. `verify` y abrir el PR con el bloque `GATE`/`VERDICT`.
+
+Para ordenar lo que entra al tracker, `/triage` clasifica issues y deja los que están listos con un brief para un agente.
+
+### Revisar un PR o una rama
+
+`review-diff` ("revisá el PR 123", "revisá desde main"). Reporta estándares y spec por separado.
+
+### Mejorar la arquitectura
+
+`/improve-codebase-architecture` busca módulos para profundizar, arma un reporte HTML y hace grilling sobre el que se elija. De ahí sigue como una feature: `/to-spec`, `/create-tickets`, `/implement-tickets`.
+
+### Mantener el entorno
+
+- `/retro` después de una sesión que costó más de lo debido. Propone mejoras al entorno; lo mecánico conviene llevarlo a una regla o un gate de `.agents/config/verify.json`.
+- `/handoff` para pasar el trabajo a otra sesión con un documento de traspaso.
+- `writing-for-agents` al crear o editar skills, `AGENTS.md` o `CLAUDE.md`.
+- Las convenciones se editan directo en `docs/agents/*.md`. `/setup-workflow` se vuelve a correr solo para cambiar de tracker o empezar de cero.
+
+### Referencia rápida
+
+| Situación | Skill | Invocación |
+| --- | --- | --- |
+| Primera vez en un repo | `setup-workflow` | manual |
+| Afinar una idea o un plan | `grill-with-docs`, o `grilling` sin docs | manual / auto |
+| Una duda de diseño que necesita algo concreto | `prototype` | auto |
+| Un dato externo | `research` | auto |
+| Una pregunta para otra persona | `to-questionnaire` | manual |
+| Conversación → spec | `to-spec` | manual |
+| Spec → tickets | `create-tickets` | auto |
+| Tickets → código | `implement-tickets` | auto |
+| Un bug | `diagnosing-bugs`, después `tdd` | auto |
+| Antes de cada PR | `verify` | auto |
+| Revisar un PR o una rama | `review-diff` | auto |
+| Issues que entran | `triage` | manual |
+| Pasos manuales (credenciales, dashboards, un cutover) | `wizard` | auto |
+| Refactor de arquitectura | `improve-codebase-architecture` | manual |
+| Después de una sesión difícil | `retro` | manual |
+| Pasar el trabajo a otra sesión | `handoff` | manual |
 
 ## Qué escribe el setup
 
