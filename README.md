@@ -1,99 +1,99 @@
 # skills
 
-Agent skills for one way of shipping software with coding agents: plan in the tracker, implement in isolated worktrees, prove every change from real gate output, and keep a human at every merge into the base branch. The skills are project-agnostic; `setup-workflow` writes each repo's specifics into a few files the skills read at runtime.
+Skills para agentes que implementan una forma de entregar software con agentes de código: planificar en el tracker, implementar en worktrees aislados, probar cada cambio con la salida real de los gates y dejar a una persona en cada merge hacia la rama base. Las skills no dependen de ningún proyecto: `setup-workflow` escribe lo propio de cada repo en unos pocos archivos que las skills leen al ejecutarse.
 
-## The workflow
+## El flujo de trabajo
 
-**Large features: spec → ticket map → parallel workers → integration branch.**
+**Features grandes: spec → mapa de tickets → workers en paralelo → rama de integración.**
 
-1. A spec lands in the tracker (`to-spec`), and decisions go into the repo's docs (`grill-with-docs`, `domain-modeling`).
-2. `create-tickets` splits it into a ticket map: stable IDs (`M2-B1-T03`), acceptance criteria, ownership, and native blocking edges.
-3. `implement-tickets` runs each dependency wave through workers in their own worktrees. Every ticket PR targets an integration branch, is reviewed by the parent, and merges only when the full suite passes on the exact merge candidate.
-4. The integration PR to the base branch stays a draft until a human merges it.
+1. Una spec llega al tracker (`to-spec`) y las decisiones quedan en la documentación del repo (`grill-with-docs`, `domain-modeling`).
+2. `create-tickets` la divide en un mapa de tickets: IDs estables (`M2-B1-T03`), criterios de aceptación, ownership y relaciones de bloqueo nativas.
+3. `implement-tickets` ejecuta cada ola de dependencias con workers, cada uno en su propio worktree. Cada PR de ticket apunta a una rama de integración, lo revisa el agente principal y se mergea solo cuando la suite completa pasa sobre el candidato exacto de merge.
+4. El PR de integración hacia la rama base queda en borrador hasta que una persona lo mergea.
 
-**Single fixes: issue → worktree → test-first fix → PR.**
+**Fixes puntuales: issue → worktree → fix con test primero → PR.**
 
-1. One issue, one worktree, one branch.
-2. `diagnosing-bugs` until the loop goes red, then `tdd` for the smallest green change.
-3. `verify` before the PR; its `GATE`/`VERDICT` block goes in the PR body.
-4. Findings from a review of a merged PR become follow-up PRs, not amendments.
+1. Un issue, un worktree, una rama.
+2. `diagnosing-bugs` hasta que el ciclo quede en rojo, y después `tdd` para el cambio más chico que lo ponga en verde.
+3. `verify` antes del PR; su bloque `GATE`/`VERDICT` va en el cuerpo del PR.
+4. Los hallazgos de una revisión de un PR ya mergeado se resuelven en PRs de seguimiento, no con enmiendas.
 
 ## Skills
 
-| Skill | What it does |
+| Skill | Qué hace |
 | --- | --- |
-| [`setup-workflow`](skills/setup-workflow/SKILL.md) | Configures a repo: harness, tracker, labels, domain docs, conventions, verify gates. Installs everything below. Run by hand (`/setup-workflow`). |
-| [`create-tickets`](skills/create-tickets/SKILL.md) | Turns an approved plan into a dependency-aware ticket map in Linear, GitHub Issues or local markdown. |
-| [`implement-tickets`](skills/implement-tickets/SKILL.md) | Implements a ticket map through parallel worktree workers, parent review and full-suite merge gates. |
-| [`verify`](skills/verify/SKILL.md) | Maps the diff to the repo's required gates, runs them, and prints a verdict a reviewer can trust. |
-| [`review-diff`](skills/review-diff/SKILL.md) | Reviews a diff, branch or PR on two separate axes, standards and spec, in parallel subagents. `implement-tickets` runs it on every ticket PR and on the finished feature branch. Adapted from Matt Pocock's `code-review`. |
-| [`grilling`](skills/grilling/SKILL.md) | Interviews you about a plan in rounds over a design tree, with a recommended answer for every question. From Matt Pocock. |
-| [`grill-with-docs`](skills/grill-with-docs/SKILL.md) | Grilling plus `domain-modeling`: glossary terms and ADRs get written as the interview resolves them. Run by hand. From Matt Pocock. |
-| [`domain-modeling`](skills/domain-modeling/SKILL.md) | Challenges and sharpens domain language and records glossary terms and ADRs. Adapted from Matt Pocock to the multi-context layout below. |
+| [`setup-workflow`](skills/setup-workflow/SKILL.md) | Configura un repo: harness, tracker, labels, documentación de dominio, convenciones y gates de verify. Instala todo lo de abajo. Se ejecuta a mano (`/setup-workflow`). |
+| [`create-tickets`](skills/create-tickets/SKILL.md) | Convierte un plan aprobado en un mapa de tickets con dependencias, en Linear, GitHub Issues o markdown local. |
+| [`implement-tickets`](skills/implement-tickets/SKILL.md) | Implementa un mapa de tickets con workers en worktrees paralelos, revisión del agente principal y gates de merge con la suite completa. |
+| [`verify`](skills/verify/SKILL.md) | Mapea el diff a los gates obligatorios del repo, los ejecuta e imprime un veredicto en el que un revisor puede confiar. |
+| [`review-diff`](skills/review-diff/SKILL.md) | Revisa un diff, una rama o un PR en dos ejes separados, estándares y spec, con subagentes en paralelo. `implement-tickets` lo corre en cada PR de ticket y sobre la rama de feature terminada. Adaptado de `code-review` de Matt Pocock. |
+| [`grilling`](skills/grilling/SKILL.md) | Te entrevista sobre un plan en rondas, recorriendo un árbol de diseño, con una respuesta recomendada para cada pregunta. De Matt Pocock. |
+| [`grill-with-docs`](skills/grill-with-docs/SKILL.md) | Grilling más `domain-modeling`: los términos del glosario y los ADRs se escriben a medida que la entrevista los resuelve. Se ejecuta a mano. De Matt Pocock. |
+| [`domain-modeling`](skills/domain-modeling/SKILL.md) | Cuestiona y precisa el lenguaje del dominio, y registra términos del glosario y ADRs. Adaptado de Matt Pocock a la estructura multi-contexto de abajo. |
 
-`setup-workflow` also installs these upstream skills, pinned in the target repo's `skills-lock.json`: `tdd`, `diagnosing-bugs`, `codebase-design`, `improve-codebase-architecture`, `prototype`, `writing-for-agents`, `handoff`, `to-spec`, `triage`, `research`, `retro`, `to-questionnaire` and `wizard` from [mattpocock/skills](https://github.com/mattpocock/skills), plus `react-useeffect` from [softaworks/agent-toolkit](https://github.com/softaworks/agent-toolkit) in React repos. [`upstream.json`](skills/setup-workflow/upstream.json) lists them, along with the upstream skills left out because this collection replaces them.
+`setup-workflow` también instala estas skills de upstream, fijadas en el `skills-lock.json` del repo destino: `tdd`, `diagnosing-bugs`, `codebase-design`, `improve-codebase-architecture`, `prototype`, `writing-for-agents`, `handoff`, `to-spec`, `triage`, `research`, `retro`, `to-questionnaire` y `wizard` de [mattpocock/skills](https://github.com/mattpocock/skills), más `react-useeffect` de [softaworks/agent-toolkit](https://github.com/softaworks/agent-toolkit) en repos con React. [`upstream.json`](skills/setup-workflow/upstream.json) las lista, junto con las skills de upstream que quedaron afuera y el motivo.
 
-## Install
+## Instalación
 
-In the repo you want to set up:
+En el repo que se quiere configurar:
 
 ```bash
 npx skills add tymkiwdylan/skills -s setup-workflow -a claude-code codex -y
 ```
 
-Then run `/setup-workflow` in your agent. It explores the repo, proposes an answer for each choice, shows you every file before writing it, installs the rest of the skills, and finishes by running `verify --plan` against recent history so you can check the gates.
+Después, ejecutar `/setup-workflow` en el agente. Explora el repo, propone una respuesta para cada decisión, muestra cada archivo antes de escribirlo, instala el resto de las skills y termina corriendo `verify --plan` contra el historial reciente para que se puedan revisar los gates.
 
-Update later with `npx skills update -p`. Teammates restore the pinned set with `npx skills experimental_install`.
+Para actualizar más adelante: `npx skills update -p`. El resto del equipo restaura el conjunto fijado con `npx skills experimental_install`.
 
-## What setup writes
+## Qué escribe el setup
 
-| File | Holds |
+| Archivo | Contenido |
 | --- | --- |
-| `docs/agents/issue-tracker.md` | Where issues live and the exact operations for that tracker |
-| `docs/agents/triage-labels.md` | The label or state string for each triage role and ticket classification |
-| `docs/agents/domain.md` | Glossary and ADR layout |
-| `docs/agents/workflow.md` | Harness, language, branches, commits, PR rules, merge strategy, full-suite commands, notifications |
-| `.agents/config/verify.json` | Gates (changed paths → command) and added-line rules for `verify` |
-| `GLOSSARY.md` + `docs/adr/` (single-context), or `GLOSSARY-MAP.md` + `docs/domains/<context>/GLOSSARY.md` + `docs/adr/` (multi-context) | The domain language and recorded decisions. Setup can seed the first terms and ADRs from the code, with you confirming each one. |
-| `## Agent skills` in `CLAUDE.md` or `AGENTS.md` | Pointers to all of the above |
+| `docs/agents/issue-tracker.md` | Dónde viven los issues y las operaciones exactas de ese tracker |
+| `docs/agents/triage-labels.md` | El label o estado que corresponde a cada rol de triage y a cada clasificación de ticket |
+| `docs/agents/domain.md` | La estructura del glosario y de los ADRs |
+| `docs/agents/workflow.md` | Harness, idioma, ramas, commits, reglas de PR, estrategia de merge, comandos de la suite completa y notificaciones |
+| `.agents/config/verify.json` | Gates (rutas cambiadas → comando) y reglas sobre líneas agregadas para `verify` |
+| `GLOSSARY.md` + `docs/adr/` (un solo contexto), o `GLOSSARY-MAP.md` + `docs/domains/<contexto>/GLOSSARY.md` + `docs/adr/` (multi-contexto) | El lenguaje del dominio y las decisiones registradas. El setup puede sembrar los primeros términos y ADRs a partir del código, con confirmación de cada uno. |
+| `## Agent skills` en `CLAUDE.md` o `AGENTS.md` | Referencias a todo lo anterior |
 
-The `issue-tracker.md`, `triage-labels.md` and `domain.md` files use the same shape as `setup-matt-pocock-skills`, so the upstream skills read them unchanged.
+Los archivos `issue-tracker.md`, `triage-labels.md` y `domain.md` tienen la misma forma que los de `setup-matt-pocock-skills`, así que las skills de upstream los leen sin cambios.
 
-## Domain docs
+## Documentación de dominio
 
-Every skill that names a domain concept uses the owning glossary's term, and flags output that contradicts an ADR. In a multi-context repo, `GLOSSARY-MAP.md` is the entry point:
+Toda skill que nombra un concepto del dominio usa el término del glosario dueño de ese concepto, y señala cualquier resultado que contradiga un ADR. En un repo multi-contexto, el punto de entrada es `GLOSSARY-MAP.md`:
 
-| Context | Glossary | Owns (main code paths) | ADRs |
+| Contexto | Glosario | Es dueño de (rutas principales) | ADRs |
 | --- | --- | --- | --- |
 | Billing | `docs/domains/billing/GLOSSARY.md` | `apps/api/billing/`, `packages/invoicing/` | 0002, 0004 |
 
-An agent goes from a changed file to its context, then reads that glossary and those ADRs before changing code. Each term belongs to exactly one context, and all ADRs share one numbering, checked against the base branch so parallel branches don't collide.
+Un agente va de un archivo cambiado a su contexto, y lee ese glosario y esos ADRs antes de tocar el código. Cada término pertenece a un solo contexto, y todos los ADRs comparten una única numeración, verificada contra la rama base para que ramas en paralelo no repitan números.
 
 ## Harness
 
-`workflow.md` names the harness, and `implement-tickets` adapts to it:
+`workflow.md` indica el harness, y `implement-tickets` se adapta:
 
-- **`t3code`**: T3 Code on Claude Code. Workers are worktree subagents, PRs are linked to the thread, and the thread waits on `watch_pull_request` instead of polling.
-- **`plain`**: any other harness. Workers run in `git worktree` checkouts, and CI is watched with `gh pr checks --watch`.
+- **`t3code`**: T3 Code sobre Claude Code. Los workers son subagentes en worktrees, los PRs quedan vinculados al thread y el thread espera con `watch_pull_request` en lugar de hacer polling.
+- **`plain`**: cualquier otro harness. Los workers trabajan en checkouts de `git worktree`, y el CI se sigue con `gh pr checks --watch`.
 
-## Roadmap
+## Próximos pasos
 
-- `live-qa`: browser QA of a change in the running app, with a doctor check, login adapters and a defect report.
-- `autofix`: an unattended lane from a labelled bug to a reviewed PR or a hand-back.
-- Runner templates for scheduling those lanes.
+- `live-qa`: QA en el navegador de un cambio en la app corriendo, con chequeo previo del entorno, adaptadores de login y un reporte de defectos.
+- `autofix`: un carril desatendido que lleva un bug etiquetado hasta un PR revisado o lo devuelve a una persona.
+- Plantillas de runners para programar esos carriles.
 
-## Development
+## Desarrollo
 
 ```bash
 npm test
 ```
 
-Runs the `verify` engine tests and the repo checks in [`test/repo.test.mjs`](test/repo.test.mjs): frontmatter, links, template validity, upstream collisions, the install list, and a guard against project-specific names.
+Corre los tests del motor de `verify` y los chequeos del repo en [`test/repo.test.mjs`](test/repo.test.mjs): frontmatter, links, validez de las plantillas, colisiones con upstream, la lista de instalación y una protección contra nombres propios de un proyecto.
 
-## Credits
+## Créditos
 
-`grilling`, `grill-with-docs`, `domain-modeling` and `review-diff` (from `code-review`) are vendored from [mattpocock/skills](https://github.com/mattpocock/skills) by Matt Pocock (MIT), and the `docs/agents/` file shapes follow his `setup-matt-pocock-skills`. [NOTICE.md](NOTICE.md) records the upstream commit and every change made here. Most of the upstream skills `setup-workflow` installs are his as well.
+`grilling`, `grill-with-docs`, `domain-modeling` y `review-diff` (a partir de `code-review`) están incluidas desde [mattpocock/skills](https://github.com/mattpocock/skills) de Matt Pocock (MIT), y la forma de los archivos de `docs/agents/` sigue su `setup-matt-pocock-skills`. [NOTICE.md](NOTICE.md) registra el commit de upstream y cada cambio hecho acá. La mayoría de las skills de upstream que instala `setup-workflow` también son suyas.
 
-## License
+## Licencia
 
-[MIT](LICENSE). The vendored skills keep their upstream license in their own folders.
+[MIT](LICENSE). Las skills incluidas desde upstream conservan su licencia original en sus propias carpetas.
