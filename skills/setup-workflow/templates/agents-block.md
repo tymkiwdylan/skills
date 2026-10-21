@@ -10,7 +10,7 @@
 
 ### Domain docs
 
-<single-context | multi-context>. See [`docs/agents/domain.md`](docs/agents/domain.md).
+<Single-context: `GLOSSARY.md` and `docs/adr/` | Multi-context: [`GLOSSARY-MAP.md`](GLOSSARY-MAP.md) maps each context to its glossary under `docs/domains/<context>/`, the code it owns, and its ADRs in `docs/adr/`>. Read the owning context's glossary and ADRs before changing code there. See [`docs/agents/domain.md`](docs/agents/domain.md).
 
 ### Workflow
 

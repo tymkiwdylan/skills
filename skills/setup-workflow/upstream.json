@@ -6,9 +6,6 @@
       "skills": [
         "tdd",
         "diagnosing-bugs",
-        "grilling",
-        "grill-with-docs",
-        "domain-modeling",
         "codebase-design",
         "improve-codebase-architecture",
         "prototype",
@@ -18,6 +15,10 @@
         "triage"
       ],
       "excluded": {
+        "grilling": "vendored here from mattpocock/skills (see NOTICE.md)",
+        "grill-with-docs": "vendored here from mattpocock/skills (see NOTICE.md)",
+        "domain-modeling": "vendored here and adapted to the docs/domains layout (see NOTICE.md)",
+        "grill-me": "grilling covers it",
         "to-tickets": "replaced by create-tickets",
         "implement": "replaced by implement-tickets",
         "implement-spec": "replaced by implement-tickets",

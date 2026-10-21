@@ -82,6 +82,17 @@ test("setup-workflow installs every skill in this repo", () => {
   assert.deepEqual(install[1].split(/\s+/).sort(), [...skillNames].sort());
 });
 
+test("every vendored skill is credited in NOTICE.md and carries the upstream license", () => {
+  const notice = readFileSync(join(root, "NOTICE.md"), "utf8");
+  const vendored = [...notice.matchAll(/^\| `([\w-]+)` \| `skills\//gm)].map((m) => m[1]);
+  assert.deepEqual(vendored.sort(), ["domain-modeling", "grill-with-docs", "grilling"]);
+  for (const name of vendored) {
+    assert.ok(skillNames.includes(name), `${name}: credited but not in skills/`);
+    const license = join(skillsDir, name, "LICENSE");
+    assert.ok(existsSync(license) && readFileSync(license, "utf8").includes("Matt Pocock"), `${name}: missing upstream LICENSE`);
+  }
+});
+
 test("no project-specific names leak into the collection", () => {
   const leaks = [];
   const pattern = /ialex|convex|norte|\bNOR-\d|tymkiwdylan@|nortedev/i;
