@@ -1,6 +1,6 @@
 # skills
 
-Skills para agentes que implementan una forma de entregar software con agentes de código: planificar en el tracker, implementar en worktrees aislados, probar cada cambio con la salida real de los gates y dejar a una persona en cada merge hacia la rama base. Las skills no dependen de ningún proyecto: `setup-workflow` escribe lo propio de cada repo en unos pocos archivos que las skills leen al ejecutarse.
+Skills para implementar software con agentes: planificar, implementar en worktrees aislados, probar cada cambio con gates y dejar el merge final para revisión humana. Las skills no dependen de ningún proyecto: `setup-workflow` escribe lo propio de cada repo en unos pocos archivos que las skills leen al ejecutarse.
 
 ## El flujo de trabajo
 
