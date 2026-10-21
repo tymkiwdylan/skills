@@ -1,0 +1,5 @@
+interface:
+  display_name: "Setup Workflow"
+  short_description: "Configure a repo for this skill collection"
+policy:
+  allow_implicit_invocation: false

@@ -1,0 +1,77 @@
+{
+  "base": ["origin/main", "main"],
+  "ignore": ["**/*.md", "**/*.mdx"],
+  "ignoreComment": "verify-ignore",
+  "gates": [
+    {
+      "name": "typecheck",
+      "why": "workspace tsc --noEmit; deletions count because imports can break",
+      "when": [{ "paths": ["**/*.{ts,tsx,mts,cts}", "**/tsconfig*.json"] }],
+      "run": ["pnpm", "-r", "typecheck"]
+    },
+    {
+      "name": "eslint",
+      "why": "root eslint config with --max-warnings 0 on the changed files",
+      "when": [
+        {
+          "paths": ["{apps,packages}/**/*.{ts,tsx,js,jsx,mjs}"],
+          "exclude": ["**/dist/**", "**/_generated/**"],
+          "status": ["A", "M", "R", "C", "?"]
+        }
+      ],
+      "run": ["pnpm", "exec", "eslint", "--max-warnings", "0", "--no-warn-ignored", "--", "{files}"]
+    },
+    {
+      "name": "test:web",
+      "why": "vitest tests that import the changed web modules",
+      "when": [
+        {
+          "paths": ["apps/web/src/**/*.{ts,tsx}"],
+          "exclude": ["**/*.d.ts"],
+          "status": ["A", "M", "R", "C", "?"]
+        }
+      ],
+      "run": ["pnpm", "exec", "vitest", "related", "--run", "--passWithNoTests", "{files}"],
+      "cwd": "apps/web"
+    },
+    {
+      "name": "test:api",
+      "why": "the api package's full suite",
+      "when": [{ "paths": ["apps/api/**", "packages/shared/**"] }],
+      "run": ["pnpm", "-C", "apps/api", "test"]
+    },
+    {
+      "name": "build:shared",
+      "why": "packages/shared is consumed through its built dist",
+      "when": [{ "paths": ["packages/shared/**"] }],
+      "run": ["pnpm", "--filter", "@acme/shared", "build"]
+    }
+  ],
+  "rules": [
+    {
+      "id": "no-ts-cast",
+      "severity": "error",
+      "paths": ["**/*.{ts,tsx,mts,cts}"],
+      "exclude": ["**/*.test.{ts,tsx}", "**/_generated/**"],
+      "pattern": "^(?!\\s*(?:import|export)\\b).*\\bas\\s+(?!const\\b)[A-Za-z_{(\\[]",
+      "code": true,
+      "message": "AGENTS.md: no type casts; use a validator, type guard or narrower declaration"
+    },
+    {
+      "id": "no-focused-test",
+      "severity": "error",
+      "paths": ["**/*.test.{ts,tsx}"],
+      "pattern": "\\b(?:it|test|describe)\\.only\\(",
+      "code": true,
+      "message": "remove .only before committing"
+    },
+    {
+      "id": "no-console",
+      "severity": "warn",
+      "paths": ["apps/web/src/**/*.{ts,tsx}"],
+      "pattern": "\\bconsole\\.(?:log|debug)\\(",
+      "code": true,
+      "message": "use the app logger instead of console"
+    }
+  ]
+}

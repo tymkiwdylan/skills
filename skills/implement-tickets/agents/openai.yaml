@@ -1,0 +1,4 @@
+interface:
+  display_name: "Implement Tickets"
+  short_description: "Implement a ticket map through parallel workers and reviewed PRs"
+  default_prompt: "Use $implement-tickets to implement the ticket map on a feature branch."

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Verify"
+  short_description: "Prove a change with diff-derived gates"
+  default_prompt: "Use $verify to run the required gates for my changes and report the GATE lines and VERDICT."

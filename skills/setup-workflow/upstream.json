@@ -1,0 +1,37 @@
+{
+  "$comment": "Upstream skills setup-workflow installs with `npx skills add`. This file ships inside the setup-workflow skill so an installed copy is self-contained.",
+  "sources": [
+    {
+      "source": "mattpocock/skills",
+      "skills": [
+        "tdd",
+        "diagnosing-bugs",
+        "grilling",
+        "grill-with-docs",
+        "domain-modeling",
+        "codebase-design",
+        "improve-codebase-architecture",
+        "prototype",
+        "writing-for-agents",
+        "handoff",
+        "to-spec",
+        "triage"
+      ],
+      "excluded": {
+        "to-tickets": "replaced by create-tickets",
+        "implement": "replaced by implement-tickets",
+        "implement-spec": "replaced by implement-tickets",
+        "setup-matt-pocock-skills": "replaced by setup-workflow, which writes the same docs/agents files",
+        "code-review": "collides with the Claude Code built-in /code-review",
+        "pr": "PR body rules live in docs/agents/workflow.md"
+      }
+    },
+    {
+      "source": "softaworks/agent-toolkit",
+      "when": "react",
+      "skills": [
+        "react-useeffect"
+      ]
+    }
+  ]
+}

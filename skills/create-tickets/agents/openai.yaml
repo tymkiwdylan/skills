@@ -1,0 +1,4 @@
+interface:
+  display_name: "Create Tickets"
+  short_description: "Turn an approved plan into a dependency-aware ticket map"
+  default_prompt: "Use $create-tickets to turn the approved plan into tickets in this repo's tracker."
