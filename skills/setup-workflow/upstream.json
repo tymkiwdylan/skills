@@ -12,7 +12,11 @@
         "writing-for-agents",
         "handoff",
         "to-spec",
-        "triage"
+        "triage",
+        "research",
+        "retro",
+        "to-questionnaire",
+        "wizard"
       ],
       "excluded": {
         "grilling": "vendored here from mattpocock/skills (see NOTICE.md)",
@@ -21,10 +25,14 @@
         "grill-me": "grilling covers it",
         "to-tickets": "replaced by create-tickets",
         "implement": "replaced by implement-tickets",
-        "implement-spec": "replaced by implement-tickets",
+        "implement-spec": "replaced by implement-tickets, which takes its exploration-notes and final-review steps",
         "setup-matt-pocock-skills": "replaced by setup-workflow, which writes the same docs/agents files",
-        "code-review": "collides with the Claude Code built-in /code-review",
-        "pr": "PR body rules live in docs/agents/workflow.md"
+        "code-review": "vendored here as review-diff, since its name collides with the Claude Code built-in /code-review (see NOTICE.md)",
+        "pr": "its evidence and merge-danger sections are folded into the workflow.md PR rules",
+        "wayfinder": "needs a Wayfinding operations section in issue-tracker.md; add it with that section when an effort needs it",
+        "git-guardrails-claude-code": "blocks git push and branch -D, which workers and cleanup need",
+        "setup-pre-commit": "verify covers the same gates",
+        "ask-matt": "routes over the upstream set, not this collection"
       }
     },
     {

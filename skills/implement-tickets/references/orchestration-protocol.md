@@ -47,6 +47,7 @@ Repository checkout: {isolated absolute worktree path}.
 Start commit: {current remote feature branch SHA}.
 Your unique branch: {ticket branch}. PR base: {feature branch}.
 Read {applicable AGENTS.md / CLAUDE.md paths}, docs/agents/workflow.md and {authoritative source paths}.
+Exploration notes, if any: {path outside the repo}; read them before exploring yourself.
 Acceptance and demonstration: {ticket criteria or exact source location}.
 Owned files/modules: {ownership}. Shared contracts: {stable contracts}.
 Prerequisites already merged: {tickets and merge SHAs}.

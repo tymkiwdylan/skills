@@ -85,7 +85,7 @@ test("setup-workflow installs every skill in this repo", () => {
 test("every vendored skill is credited in NOTICE.md and carries the upstream license", () => {
   const notice = readFileSync(join(root, "NOTICE.md"), "utf8");
   const vendored = [...notice.matchAll(/^\| `([\w-]+)` \| `skills\//gm)].map((m) => m[1]);
-  assert.deepEqual(vendored.sort(), ["domain-modeling", "grill-with-docs", "grilling"]);
+  assert.deepEqual(vendored.sort(), ["domain-modeling", "grill-with-docs", "grilling", "review-diff"]);
   for (const name of vendored) {
     assert.ok(skillNames.includes(name), `${name}: credited but not in skills/`);
     const license = join(skillsDir, name, "LICENSE");

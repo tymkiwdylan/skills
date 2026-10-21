@@ -37,6 +37,8 @@ Invoking this skill for implementation authorizes branch creation and PR operati
 
 Respect the ticket DAG. The candidate wave is every `agent-ready` ticket in `Todo` whose blockers are all `Done`; confirm against the feature branch that each blocker's PR is actually merged before trusting the status.
 
+Before the first wave, when tickets share unfamiliar ground (a subsystem, an external API, a data shape), run one read-only exploration subagent that writes its notes outside the repo, at a path recorded in the integration record. Worker prompts point at those notes instead of having every worker explore again.
+
 - Dispatch write-heavy tickets to workers in their own worktrees, each starting from the current remote feature branch on one unique ticket branch, as the harness reference describes.
 - Use read-only subagents for exploration, focused review or test analysis.
 - Never let two write-capable workers share a checkout or a branch.
@@ -56,10 +58,10 @@ Use the worker prompt and PR template from the protocol reference. Give workers 
 
 ## Review and feedback loop
 
-The parent personally reviews every ticket PR. Review subagents may add evidence; they don't replace the parent's judgment.
+The parent personally reviews every ticket PR. `review-diff` and other review subagents add evidence; they don't replace the parent's judgment.
 
 1. Confirm the PR's base is the feature branch and its branch holds only the assigned ticket.
-2. Review the full diff and commits against the acceptance criteria, repository invariants, authorization boundaries, failure behaviour, migrations and test coverage.
+2. Run `review-diff` on the PR, with the ticket as the spec. Then review the full diff and commits yourself against the acceptance criteria, repository invariants, authorization boundaries, failure behaviour, migrations and test coverage, weighing its findings rather than forwarding them unread.
 3. Run focused checks, and verify the demonstration when relevant.
 4. Send concrete, prioritized findings to the original worker, which fixes the same branch with new commits and reports fresh evidence.
 5. Re-review the change. Repeat until no actionable findings remain.
@@ -71,6 +73,8 @@ Don't silently repair a worker's PR in the parent checkout. Return ownership, un
 A missing business decision, external input, credential or production authorization blocks only the tickets it reaches, not the run.
 
 1. Record the blocker on the affected ticket where the engineer will see it: what is missing, why it can't be inferred, options with a recommendation, and what unblocks it. Apply the `HITL` label, assign the engineer, and move it out of `In Progress`. When a decision spans several tickets, create one `client-question` or `HITL` ticket that blocks them.
+   - When unblocking means a manual procedure (creating credentials, configuring a third-party dashboard, a cutover), prepare a `wizard` script for it and link it from the ticket, so the engineer runs it instead of following prose.
+   - When the answer has to come from someone other than the engineer (a client, a domain expert), draft it with `to-questionnaire` and link the document from the ticket.
 2. Notify the engineer once per new batch of blockers, through the `Notify` mechanism in `workflow.md`. Invoking this skill authorizes those notifications and no others.
 3. Continue with every ticket the blocker doesn't reach. At each wave boundary, re-check flagged tickets for an answer (a comment, the label removed, or the blocker ticket `Done`) and resume them.
 4. Stop and report `partial/blocked` only when no unblocked in-scope ticket remains.
@@ -96,10 +100,11 @@ Merge ticket PRs one at a time with the merge strategy from `workflow.md`. After
 After every in-scope repository ticket is merged:
 
 1. Run the full suite on the final feature branch and verify the plan's integrated demonstration.
-2. Confirm ticket-to-PR traceability, no unresolved review comments, and no accidental deferred scope.
-3. Push the final feature branch.
-4. Open or update a draft aggregate PR from the feature branch to the base branch, and leave it unmerged.
-5. Update the integration record, and post a status update where the tracker supports one (Linear project update: `onTrack`, `atRisk` or `offTrack`), listing every open `HITL`, `gate` and `external-blocked` ticket.
-6. Deliver the feature branch, the aggregate PR, the ticket PR list, the tests run, the demonstrations completed, and any explicit blockers or residual risks.
+2. Run `review-diff` on the whole feature branch against the base, with the spec as its spec. Ticket reviews can't see problems that only appear across tickets. Route actionable findings to a worker as a follow-up ticket PR through the same merge gate.
+3. Confirm ticket-to-PR traceability, no unresolved review comments, and no accidental deferred scope.
+4. Push the final feature branch.
+5. Open or update a draft aggregate PR from the feature branch to the base branch, and leave it unmerged.
+6. Update the integration record, and post a status update where the tracker supports one (Linear project update: `onTrack`, `atRisk` or `offTrack`), listing every open `HITL`, `gate` and `external-blocked` ticket.
+7. Deliver the feature branch, the aggregate PR, the ticket PR list, the tests run, the demonstrations completed, and any explicit blockers or residual risks.
 
 Report `review-ready` only when every required repository ticket is complete, the final suite is green and the branch is pushed. When a required input still blocks implementation, report `partial/blocked` and don't describe the feature as complete. Live operational gates may stay pending engineer authorization, clearly separated from completed code.
