@@ -35,6 +35,8 @@ Give each ticket exactly one classification from `triage-labels.md`: `agent-read
 
 When the plan leaves a business decision open, don't choose an answer. Create a `client-question` ticket assigned to the engineer stating the question, why it can't be inferred, the options with a recommendation, and the tickets it blocks; make those tickets blocked by it.
 
+When the answer has to come from someone other than the engineer (a client, a domain expert), offer to draft the questions with `to-questionnaire`, and link the document from the `client-question` ticket.
+
 ## Validate before writing
 
 Build the full map in memory first, then check:

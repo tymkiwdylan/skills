@@ -26,11 +26,12 @@ Agent skills for one way of shipping software with coding agents: plan in the tr
 | [`create-tickets`](skills/create-tickets/SKILL.md) | Turns an approved plan into a dependency-aware ticket map in Linear, GitHub Issues or local markdown. |
 | [`implement-tickets`](skills/implement-tickets/SKILL.md) | Implements a ticket map through parallel worktree workers, parent review and full-suite merge gates. |
 | [`verify`](skills/verify/SKILL.md) | Maps the diff to the repo's required gates, runs them, and prints a verdict a reviewer can trust. |
+| [`review-diff`](skills/review-diff/SKILL.md) | Reviews a diff, branch or PR on two separate axes, standards and spec, in parallel subagents. `implement-tickets` runs it on every ticket PR and on the finished feature branch. Adapted from Matt Pocock's `code-review`. |
 | [`grilling`](skills/grilling/SKILL.md) | Interviews you about a plan in rounds over a design tree, with a recommended answer for every question. From Matt Pocock. |
 | [`grill-with-docs`](skills/grill-with-docs/SKILL.md) | Grilling plus `domain-modeling`: glossary terms and ADRs get written as the interview resolves them. Run by hand. From Matt Pocock. |
 | [`domain-modeling`](skills/domain-modeling/SKILL.md) | Challenges and sharpens domain language and records glossary terms and ADRs. Adapted from Matt Pocock to the multi-context layout below. |
 
-`setup-workflow` also installs these upstream skills, pinned in the target repo's `skills-lock.json`: `tdd`, `diagnosing-bugs`, `codebase-design`, `improve-codebase-architecture`, `prototype`, `writing-for-agents`, `handoff`, `to-spec` and `triage` from [mattpocock/skills](https://github.com/mattpocock/skills), plus `react-useeffect` from [softaworks/agent-toolkit](https://github.com/softaworks/agent-toolkit) in React repos. [`upstream.json`](skills/setup-workflow/upstream.json) lists them, along with the upstream skills left out because this collection replaces them.
+`setup-workflow` also installs these upstream skills, pinned in the target repo's `skills-lock.json`: `tdd`, `diagnosing-bugs`, `codebase-design`, `improve-codebase-architecture`, `prototype`, `writing-for-agents`, `handoff`, `to-spec`, `triage`, `research`, `retro`, `to-questionnaire` and `wizard` from [mattpocock/skills](https://github.com/mattpocock/skills), plus `react-useeffect` from [softaworks/agent-toolkit](https://github.com/softaworks/agent-toolkit) in React repos. [`upstream.json`](skills/setup-workflow/upstream.json) lists them, along with the upstream skills left out because this collection replaces them.
 
 ## Install
 
@@ -91,7 +92,7 @@ Runs the `verify` engine tests and the repo checks in [`test/repo.test.mjs`](tes
 
 ## Credits
 
-`grilling`, `grill-with-docs` and `domain-modeling` are vendored from [mattpocock/skills](https://github.com/mattpocock/skills) by Matt Pocock (MIT), and the `docs/agents/` file shapes follow his `setup-matt-pocock-skills`. [NOTICE.md](NOTICE.md) records the upstream commit and every change made here. Most of the upstream skills `setup-workflow` installs are his as well.
+`grilling`, `grill-with-docs`, `domain-modeling` and `review-diff` (from `code-review`) are vendored from [mattpocock/skills](https://github.com/mattpocock/skills) by Matt Pocock (MIT), and the `docs/agents/` file shapes follow his `setup-matt-pocock-skills`. [NOTICE.md](NOTICE.md) records the upstream commit and every change made here. Most of the upstream skills `setup-workflow` installs are his as well.
 
 ## License
 

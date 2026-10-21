@@ -26,6 +26,8 @@ Tickets, PR titles and bodies, and commit subjects are written in **<language>**
 ## Pull requests
 
 - The body states the problem, the root cause or approach, the change, the test that proves it, any tradeoff the engineer accepted, the `verify` `GATE`/`VERDICT` block, and a tracker magic word (`Fixes ABC-123` for work the PR completes, `Refs ABC-123` otherwise).
+- **Evidence**: before and after (a failing then passing test run, output, or screenshots for UI changes), not just a claim.
+- **Merge danger**: whether the change is a one-way door (a migration, a data rewrite, a public contract, anything hard to undo) or a two-way door, and its blast radius in a word (one screen, one tenant, every user, billing). One-way doors say how they were rehearsed.
 - Findings from a review of a merged PR land as follow-up PRs, not amendments.
 - Merge strategy: <squash for ticket and fix PRs; merge commit for integration PRs>.
 
