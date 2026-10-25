@@ -1,7 +1,6 @@
 {
   "base": ["origin/main", "main"],
   "ignore": ["**/*.md", "**/*.mdx"],
-  "ignoreComment": "verify-ignore",
   "gates": [
     {
       "name": "typecheck",
@@ -11,7 +10,7 @@
     },
     {
       "name": "eslint",
-      "why": "root eslint config with --max-warnings 0 on the changed files",
+      "why": "root eslint config, which carries the AGENTS.md rules, with --max-warnings 0 on the changed files",
       "when": [
         {
           "paths": ["{apps,packages}/**/*.{ts,tsx,js,jsx,mjs}"],
@@ -45,33 +44,6 @@
       "why": "packages/shared is consumed through its built dist",
       "when": [{ "paths": ["packages/shared/**"] }],
       "run": ["pnpm", "--filter", "@acme/shared", "build"]
-    }
-  ],
-  "rules": [
-    {
-      "id": "no-ts-cast",
-      "severity": "error",
-      "paths": ["**/*.{ts,tsx,mts,cts}"],
-      "exclude": ["**/*.test.{ts,tsx}", "**/_generated/**"],
-      "pattern": "^(?!\\s*(?:import|export)\\b).*\\bas\\s+(?!const\\b)[A-Za-z_{(\\[]",
-      "code": true,
-      "message": "AGENTS.md: no type casts; use a validator, type guard or narrower declaration"
-    },
-    {
-      "id": "no-focused-test",
-      "severity": "error",
-      "paths": ["**/*.test.{ts,tsx}"],
-      "pattern": "\\b(?:it|test|describe)\\.only\\(",
-      "code": true,
-      "message": "remove .only before committing"
-    },
-    {
-      "id": "no-console",
-      "severity": "warn",
-      "paths": ["apps/web/src/**/*.{ts,tsx}"],
-      "pattern": "\\bconsole\\.(?:log|debug)\\(",
-      "code": true,
-      "message": "use the app logger instead of console"
     }
   ]
 }

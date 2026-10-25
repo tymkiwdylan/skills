@@ -33,7 +33,7 @@ Look for the originating spec, in this order:
 
 ### 3. Identify the standards sources
 
-Search the repo for every file that documents how code should be written. When `CODING_STANDARDS.md`, `CONTRIBUTING.md`, `AGENTS.md` or `CLAUDE.md` exists, it must be on the list, along with `docs/agents/workflow.md` (commit and PR conventions) and the owning context's glossary and ADRs from `docs/agents/domain.md`. Rules already enforced by the gates and rules in `.agents/config/verify.json` count as tooling: skip them.
+Search the repo for every file that documents how code should be written. When `CODING_STANDARDS.md`, `CONTRIBUTING.md`, `AGENTS.md` or `CLAUDE.md` exists, it must be on the list, along with `docs/agents/workflow.md` (commit and PR conventions) and the owning context's glossary and ADRs from `docs/agents/domain.md`. Rules already enforced by the gates in `.agents/config/verify.json`, including the lint rules they run, count as tooling: skip them.
 
 On top of whatever the repo documents, the Standards axis always carries the **smell baseline** below: a fixed set of Fowler code smells (_Refactoring_, ch.3) that applies even when a repo documents nothing. Two rules bind it:
 

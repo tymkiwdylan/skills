@@ -6,16 +6,13 @@ import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import {
-  checkRules,
   formatGateLine,
   globToRegExp,
   matchesGlob,
   matchesWhen,
-  parseAddedLines,
   parseArgs,
   parseNameStatus,
   planGates,
-  stripCode,
   summarize,
   validateConfig,
 } from "./verify.mjs";
@@ -44,7 +41,6 @@ test("parses run mode, base, config, keep-going and repeatable skip", () => {
     parseArgs(["--run", "--base", "HEAD~2", "--keep-going", "--skip", "a", "--skip=b", "--config", "x.json"]),
     { mode: "run", base: "HEAD~2", config: "x.json", keepGoing: true, skip: ["a", "b"] },
   );
-  assert.equal(parseArgs(["--rules"]).mode, "rules");
   assert.equal(parseArgs(["--base=main"]).base, "main");
   assert.equal(parseArgs(["--config=c.json"]).config, "c.json");
 });
@@ -54,6 +50,10 @@ test("rejects unknown flags and dangling values", () => {
   assert.throws(() => parseArgs(["--base"]), /--base needs a ref/);
   assert.throws(() => parseArgs(["--skip", "--run"]), /--skip needs a gate name/);
   assert.throws(() => parseArgs(["--config"]), /--config needs a path/);
+});
+
+test("--rules points to the lint gate that replaced it", () => {
+  assert.throws(() => parseArgs(["--rules"]), /--rules was removed.*linter/);
 });
 
 // ---------- git output parsing ----------
@@ -66,39 +66,6 @@ test("parses -z name-status including renames and copies", () => {
     { status: "D", path: "gone.ts" },
     { status: "C", path: "copy.ts", oldPath: "src.ts" },
   ]);
-});
-
-test("collects only added line numbers per new path from -U0 diffs", () => {
-  const diff = [
-    "diff --git a/x.ts b/x.ts",
-    "--- a/x.ts",
-    "+++ b/x.ts",
-    "@@ -3 +3,2 @@ ctx",
-    "-old",
-    "+new three",
-    "+++looks like a header but is content",
-    "@@ -10,2 +11,0 @@",
-    "-removed",
-    "-removed",
-    "@@ -20,0 +20 @@",
-    "+tail",
-    "\\ No newline at end of file",
-    "diff --git a/gone.ts b/gone.ts",
-    "--- a/gone.ts",
-    "+++ /dev/null",
-    "@@ -1 +0,0 @@",
-    "-bye",
-    "diff --git a/old name.ts b/new name.ts",
-    "--- a/old name.ts",
-    "+++ b/new name.ts",
-    "@@ -1,0 +2 @@",
-    "+moved and edited",
-    "",
-  ].join("\n");
-  const added = parseAddedLines(diff);
-  assert.deepEqual([...added.get("x.ts")], [3, 4, 20]);
-  assert.deepEqual([...added.get("new name.ts")], [2]);
-  assert.equal(added.has("gone.ts"), false);
 });
 
 // ---------- globs ----------
@@ -169,29 +136,24 @@ const monorepo = config({
       cwd: "apps/web",
     },
   ],
-  rules: [{ id: "no-todo", severity: "warn", paths: ["**/*.ts"], pattern: "TODO", message: "no TODOs" }],
 });
 
-test("no changes plans only the rules gate", () => {
-  assert.deepEqual(gateNames([], monorepo), ["rules"]);
-});
-
-test("rules gate is planned only when rules are configured", () => {
-  assert.deepEqual(gateNames(modified("a.ts"), config()), []);
+test("no changes plans no gates", () => {
+  assert.deepEqual(gateNames([], monorepo), []);
 });
 
 test("ignored files never trigger a gate", () => {
-  assert.deepEqual(gateNames(modified("docs/x.md", "README.md"), monorepo), ["rules"]);
+  assert.deepEqual(gateNames(modified("docs/x.md", "README.md"), monorepo), []);
 });
 
 test("gates run in config order with {files} expanded", () => {
   const gates = planGates(modified("apps/web/src/App.tsx", "packages/ui/a.ts"), monorepo);
-  assert.deepEqual(gates.map((g) => g.name), ["rules", "typecheck", "eslint", "test:web"]);
-  assert.deepEqual(gates[1].command, ["pnpm", "typecheck"]);
-  assert.deepEqual(gates[2].command, ["pnpm", "exec", "eslint", "--", "apps/web/src/App.tsx", "packages/ui/a.ts"]);
-  assert.deepEqual(gates[3].command, ["pnpm", "exec", "vitest", "related", "--run", "src/App.tsx"]);
-  assert.equal(gates[3].cwd, "apps/web");
-  assert.equal(gates[1].cwd, undefined);
+  assert.deepEqual(gates.map((g) => g.name), ["typecheck", "eslint", "test:web"]);
+  assert.deepEqual(gates[0].command, ["pnpm", "typecheck"]);
+  assert.deepEqual(gates[1].command, ["pnpm", "exec", "eslint", "--", "apps/web/src/App.tsx", "packages/ui/a.ts"]);
+  assert.deepEqual(gates[2].command, ["pnpm", "exec", "vitest", "related", "--run", "src/App.tsx"]);
+  assert.equal(gates[2].cwd, "apps/web");
+  assert.equal(gates[0].cwd, undefined);
 });
 
 test("{files} drops paths outside cwd and skips a gate left with none", () => {
@@ -202,91 +164,14 @@ test("{files} drops paths outside cwd and skips a gate left with none", () => {
 });
 
 test("deleted files typecheck but are not passed to file-taking gates", () => {
-  assert.deepEqual(gateNames([{ status: "D", path: "src/old.ts" }], monorepo), ["rules", "typecheck"]);
+  assert.deepEqual(gateNames([{ status: "D", path: "src/old.ts" }], monorepo), ["typecheck"]);
 });
 
 test("every planned gate carries a reason naming its trigger", () => {
   const gates = planGates(modified("a.ts", "b.ts", "c.ts", "d.ts"), monorepo);
   for (const gate of gates) assert.ok(gate.reason.length > 0, gate.name);
-  assert.match(gates[1].reason, /^tsc across the workspace; triggered by a\.ts, b\.ts, c\.ts \(\+1 more\)$/);
-  assert.match(gates[2].reason, /^triggered by /);
-});
-
-// ---------- code stripping ----------
-
-test("stripCode blanks comments and string contents but keeps layout", () => {
-  const source = 'const a = "x as Foo"; // y as Bar\n/* z as Baz */ const b = `t ${c as D} u`;';
-  const stripped = stripCode(source);
-  assert.equal(stripped.length, source.length);
-  assert.equal(stripped.split("\n").length, 2);
-  assert.doesNotMatch(stripped, /Foo|Bar|Baz/);
-  assert.match(stripped, /c as D/);
-});
-
-test("stripCode treats regex literals as opaque", () => {
-  assert.match(stripCode("const r = /'/g; const s = x as Foo;"), /x as Foo/);
-});
-
-// ---------- rules ----------
-
-const castRule = {
-  id: "no-ts-cast",
-  severity: "error",
-  paths: ["**/*.{ts,tsx}"],
-  pattern: "\\bas\\s+(?!const\\b)[A-Za-z_{(\\[]",
-  code: true,
-  message: "avoid type casts",
-};
-const rulesOf = (path, source, added = "all", rules = [castRule], extra = {}) =>
-  checkRules(path, source, added, config({ rules, ...extra })).map((f) => `${f.line} ${f.rule}`);
-
-test("applies a rule's regex to added lines only", () => {
-  const source = "const a = b as Foo;\nconst c = d as Bar;";
-  assert.deepEqual(rulesOf("a.ts", source, new Set([2])), ["2 no-ts-cast"]);
-  assert.deepEqual(rulesOf("a.ts", source, new Set()), []);
-  assert.deepEqual(rulesOf("a.ts", source), ["1 no-ts-cast", "2 no-ts-cast"]);
-});
-
-test("rules only apply to their paths and not their excludes", () => {
-  const rule = { ...castRule, exclude: ["**/*.test.ts"] };
-  assert.deepEqual(rulesOf("a.mjs", "const a = b as Foo;", "all", [rule]), []);
-  assert.deepEqual(rulesOf("a.test.ts", "const a = b as Foo;", "all", [rule]), []);
-});
-
-test("code: true ignores matches inside comments and strings", () => {
-  const source = 'const k = ["a"] as const;\n// cast as Foo in prose\nconst m = "treat as Foo";\nconst n = o as Foo;';
-  assert.deepEqual(rulesOf("a.ts", source), ["4 no-ts-cast"]);
-  const raw = { ...castRule, code: false };
-  assert.deepEqual(rulesOf("a.ts", source, "all", [raw]), ["2 no-ts-cast", "3 no-ts-cast", "4 no-ts-cast"]);
-});
-
-test("flags are honoured", () => {
-  const rule = { id: "no-console", severity: "error", paths: ["**"], pattern: "CONSOLE\\.log", flags: "i", message: "m" };
-  assert.deepEqual(rulesOf("a.js", "console.log(1)", "all", [rule]), ["1 no-console"]);
-});
-
-test("ignore comment with a reason suppresses that rule on the same or next line", () => {
-  const source = [
-    "const a = b as Foo; // verify-ignore no-ts-cast: library type is wrong",
-    "// verify-ignore no-ts-cast: narrowing a JSON.parse result at the boundary",
-    "const c = d as Bar;",
-    "const e = f as Baz; // verify-ignore no-ts-cast",
-    "const g = h as Qux; // verify-ignore other-rule: wrong rule",
-  ].join("\n");
-  assert.deepEqual(rulesOf("a.ts", source), ["4 no-ts-cast", "5 no-ts-cast"]);
-});
-
-test("the ignore comment marker is configurable", () => {
-  const source = "const a = b as Foo; // acme-ok no-ts-cast: boundary";
-  assert.deepEqual(rulesOf("a.ts", source, "all", [castRule], { ignoreComment: "acme-ok" }), []);
-  assert.deepEqual(rulesOf("a.ts", source), ["1 no-ts-cast"]);
-});
-
-test("one finding per rule per line, carrying path, severity and message", () => {
-  const findings = checkRules("a.ts", "x as A; y as B;", "all", config({ rules: [castRule] }));
-  assert.deepEqual(findings, [
-    { path: "a.ts", line: 1, rule: "no-ts-cast", severity: "error", message: "avoid type casts" },
-  ]);
+  assert.match(gates[0].reason, /^tsc across the workspace; triggered by a\.ts, b\.ts, c\.ts \(\+1 more\)$/);
+  assert.match(gates[1].reason, /^triggered by /);
 });
 
 // ---------- config validation ----------
@@ -295,8 +180,22 @@ test("fills defaults", () => {
   const cfg = validateConfig({ gates: [] });
   assert.deepEqual(cfg.base, ["origin/main", "main"]);
   assert.deepEqual(cfg.ignore, []);
-  assert.equal(cfg.ignoreComment, "verify-ignore");
-  assert.deepEqual(cfg.rules, []);
+  assert.deepEqual(Object.keys(cfg).sort(), ["base", "gates", "ignore"]);
+});
+
+test("regex rules and their ignore comment are rejected with a pointer to the linter", () => {
+  assert.throws(
+    () => validateConfig({ gates: [], rules: [] }),
+    /config\.rules: removed; express each project rule in the linter and run it from a lint gate/,
+  );
+  assert.throws(
+    () => validateConfig({ gates: [], ignoreComment: "verify-ignore" }),
+    /config\.ignoreComment: removed; use the linter's disable comment with a reason/,
+  );
+});
+
+test("a gate may be named rules now that no in-process gate reserves it", () => {
+  assert.deepEqual(validateConfig({ gates: [{ name: "rules", when: [{ paths: ["x"] }], run: ["x"] }] }).gates[0].name, "rules");
 });
 
 test("rejects unknown keys, wrong types and bad regexes with precise paths", () => {
@@ -328,10 +227,6 @@ test("rejects unknown keys, wrong types and bad regexes with precise paths", () 
     /config\.gates\[0\]: unknown key "bogus"/,
   );
   assert.throws(
-    () => validateConfig({ gates: [{ name: "rules", when: [{ paths: ["x"] }], run: ["x"] }] }),
-    /config\.gates\[0\]\.name: "rules" is reserved/,
-  );
-  assert.throws(
     () =>
       validateConfig({
         gates: [
@@ -340,29 +235,6 @@ test("rejects unknown keys, wrong types and bad regexes with precise paths", () 
         ],
       }),
     /config\.gates\[1\]\.name: "lint" is duplicated/,
-  );
-  assert.throws(
-    () => validateConfig({ gates: [], rules: [{ id: "r", paths: ["**"], pattern: "(", message: "m" }] }),
-    /config\.rules\[0\]\.pattern: invalid regular expression/,
-  );
-  assert.throws(
-    () => validateConfig({ gates: [], rules: [{ id: "r", paths: ["**"], pattern: "x", flags: "g", message: "m" }] }),
-    /config\.rules\[0\]\.flags: only "dimsuv" are allowed/,
-  );
-  assert.throws(
-    () => validateConfig({ gates: [], rules: [{ id: "r", severity: "fatal", paths: ["**"], pattern: "x", message: "m" }] }),
-    /config\.rules\[0\]\.severity: expected "error" or "warn"/,
-  );
-  assert.throws(
-    () =>
-      validateConfig({
-        gates: [],
-        rules: [
-          { id: "r", paths: ["**"], pattern: "x", message: "m" },
-          { id: "r", paths: ["**"], pattern: "y", message: "m" },
-        ],
-      }),
-    /config\.rules\[1\]\.id: "r" is duplicated/,
   );
 });
 
@@ -377,12 +249,7 @@ test("the shipped example config validates", () => {
   const example = JSON.parse(readFileSync(join(here, "..", "examples", "verify.json"), "utf8"));
   const cfg = validateConfig(example);
   assert.ok(cfg.gates.length >= 3);
-  assert.deepEqual(
-    checkRules("apps/web/src/a.ts", "const a = b as Foo;", "all", cfg).map((f) => f.rule),
-    ["no-ts-cast"],
-  );
-  const imports = 'import * as path from "node:path";\nexport { a as b } from "./x";\nconst k = [1] as const;';
-  assert.deepEqual(checkRules("apps/web/src/a.ts", imports, "all", cfg), []);
+  assert.ok(cfg.gates.some((g) => g.name === "eslint"), "project rules need a lint gate");
 });
 
 // ---------- output ----------
@@ -429,6 +296,13 @@ function tempRepo(cfg) {
 const node = process.execPath;
 const e2eConfig = {
   gates: [
+    {
+      name: "lint",
+      why: "stands in for the project's linter",
+      when: [{ paths: ["src/**/*.ts"], status: ["A", "M", "?"] }],
+      run: [node, "-e", "process.exit(require('node:fs').readFileSync('b.ts', 'utf8').includes('debugger') ? 1 : 0)"],
+      cwd: "src",
+    },
     { name: "ok", why: "always passes", when: [{ paths: ["src/**"] }], run: [node, "-e", "process.exit(0)"] },
     {
       name: "files",
@@ -437,10 +311,9 @@ const e2eConfig = {
       cwd: "src",
     },
   ],
-  rules: [{ id: "no-debugger", severity: "error", paths: ["**/*.ts"], pattern: "\\bdebugger\\b", code: true, message: "remove debugger" }],
 };
 
-test("end to end: plan, run, rule failure, skip and missing config", () => {
+test("end to end: plan, run, gate failure and skip", () => {
   const repo = tempRepo(e2eConfig);
   try {
     writeFileSync(join(repo.dir, "src", "a.ts"), "export const a = 2;\n");
@@ -448,14 +321,15 @@ test("end to end: plan, run, rule failure, skip and missing config", () => {
 
     const plan = repo.run("--plan");
     assert.equal(plan.code, 0, plan.out);
-    assert.match(plan.out, /PLAN rules: \(in-process\)/);
+    assert.doesNotMatch(plan.out, /in-process/);
+    assert.match(plan.out, /PLAN lint: /);
     assert.match(plan.out, /PLAN ok: /);
     assert.match(plan.out, /PLAN files: .* a\.ts b\.ts \(in src\)/);
     assert.match(plan.out, /VERDICT=NOT_RUN/);
 
     const pass = repo.run("--run");
     assert.equal(pass.code, 0, pass.out);
-    assert.match(pass.out, /GATE rules PASS/);
+    assert.match(pass.out, /GATE lint PASS/);
     assert.match(pass.out, /GATE ok PASS/);
     assert.match(pass.out, /GATE files PASS/);
     assert.match(pass.out, /VERDICT=PASS/);
@@ -467,8 +341,7 @@ test("end to end: plan, run, rule failure, skip and missing config", () => {
     writeFileSync(join(repo.dir, "src", "b.ts"), "export const b = 1;\ndebugger;\n");
     const fail = repo.run("--run");
     assert.equal(fail.code, 1, fail.out);
-    assert.match(fail.out, /src\/b\.ts:2 no-debugger error remove debugger/);
-    assert.match(fail.out, /GATE rules FAIL/);
+    assert.match(fail.out, /GATE lint FAIL/);
     assert.match(fail.out, /GATE ok SKIP 0\.0s \(skipped after earlier failure\)/);
     assert.match(fail.out, /VERDICT=FAIL/);
 
