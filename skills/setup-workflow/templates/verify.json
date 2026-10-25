@@ -1,7 +1,5 @@
 {
   "base": ["origin/main", "main"],
   "ignore": ["**/*.md", "**/*.mdx"],
-  "ignoreComment": "verify-ignore",
-  "gates": [],
-  "rules": []
+  "gates": []
 }

@@ -62,7 +62,7 @@ Para ordenar lo que entra al tracker, `/triage` clasifica issues y deja los que 
 
 ### Mantener el entorno
 
-- `/retro` después de una sesión que costó más de lo debido. Propone mejoras al entorno; lo mecánico conviene llevarlo a una regla o un gate de `.agents/config/verify.json`.
+- `/retro` después de una sesión que costó más de lo debido. Propone mejoras al entorno; lo mecánico conviene llevarlo a una regla del linter o a un gate de `.agents/config/verify.json`.
 - `/handoff` para pasar el trabajo a otra sesión con un documento de traspaso.
 - `writing-for-agents` al crear o editar skills, `AGENTS.md` o `CLAUDE.md`.
 - Las convenciones se editan directo en `docs/agents/*.md`. `/setup-workflow` se vuelve a correr solo para cambiar de tracker o empezar de cero.
@@ -96,7 +96,7 @@ Para ordenar lo que entra al tracker, `/triage` clasifica issues y deja los que 
 | `docs/agents/triage-labels.md` | El label o estado que corresponde a cada rol de triage y a cada clasificación de ticket |
 | `docs/agents/domain.md` | La estructura del glosario y de los ADRs |
 | `docs/agents/workflow.md` | Harness, idioma, ramas, commits, reglas de PR, estrategia de merge, comandos de la suite completa y notificaciones |
-| `.agents/config/verify.json` | Gates (rutas cambiadas → comando) y reglas sobre líneas agregadas para `verify` |
+| `.agents/config/verify.json` | Gates (rutas cambiadas → comando) para `verify`; las reglas de código viven en el linter del proyecto |
 | `GLOSSARY.md` + `docs/adr/` (un solo contexto), o `GLOSSARY-MAP.md` + `docs/domains/<contexto>/GLOSSARY.md` + `docs/adr/` (multi-contexto) | El lenguaje del dominio y las decisiones registradas. El setup puede sembrar los primeros términos y ADRs a partir del código, con confirmación de cada uno. |
 | `## Agent skills` en `CLAUDE.md` o `AGENTS.md` | Referencias a todo lo anterior |
 

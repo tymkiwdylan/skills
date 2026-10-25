@@ -70,7 +70,9 @@ Lead each section with the recommended answer so the user can accept it in a wor
 }
 ```
 
-Order gates cheap-first (builds that others depend on, then typecheck, lint, tests). Use `{files}` only for commands that accept file arguments. Turn each mechanical AGENTS.md rule into a `rules` entry (a regex applied to added lines) or, when a regex can't express it, into a gate that runs the project's linter. The full contract is in the `verify` skill.
+Order gates cheap-first (builds that others depend on, then typecheck, lint, tests). Use `{files}` only for commands that accept file arguments. The full contract is in the `verify` skill.
+
+**F2. Lint rules.** Turn each mechanical AGENTS.md rule into a rule in the project's linter config, never a regex: an existing rule first, then a `no-restricted-syntax`-style selector, then a local custom rule with tests. Freeze the debt each new rule finds with the linter's baseline, require a reason on every disable, and make sure a lint gate covers the rule's paths. Propose the exact config changes, and the debt each rule reports, before writing. The recipe is [`../verify/references/lint-rules.md`](../verify/references/lint-rules.md); an existing `verify.json` with `rules` or `ignoreComment` is migrated with its last section.
 
 **G. Upstream skills.** Show the default set from [`upstream.json`](upstream.json) with each excluded skill and why. Add `react-useeffect` only when the repo uses React. Note any already-installed skill that collides with one of this collection and offer to remove it: `to-tickets`, `implement`, `implement-spec` and `setup-matt-pocock-skills`, or upstream copies of `grilling`, `grill-with-docs`, `domain-modeling` and `code-review` (vendored here as `review-diff`).
 
@@ -81,7 +83,7 @@ Show drafts of every file from the table above, filled in from the templates wit
 ## 4. Write and install
 
 1. **Pick the instructions file.** Edit `CLAUDE.md` if it exists, unless it only imports `AGENTS.md`; then edit `AGENTS.md`. Else edit `AGENTS.md` if it exists. If neither exists, ask which to create. Replace an existing `## Agent skills` block in place; don't touch surrounding sections.
-2. **Write** `docs/agents/{issue-tracker,triage-labels,domain,workflow}.md` and `.agents/config/verify.json`. For multi-context, also write `GLOSSARY-MAP.md` with the confirmed contexts, plus each `docs/domains/<context>/GLOSSARY.md` with its title and purpose. Single-context glossaries and `docs/adr/` are created when the first term or ADR is written (step D2, or later by `domain-modeling`).
+2. **Write** `docs/agents/{issue-tracker,triage-labels,domain,workflow}.md`, `.agents/config/verify.json` and the confirmed lint rules from F2, with their suppressions baseline. For multi-context, also write `GLOSSARY-MAP.md` with the confirmed contexts, plus each `docs/domains/<context>/GLOSSARY.md` with its title and purpose. Single-context glossaries and `docs/adr/` are created when the first term or ADR is written (step D2, or later by `domain-modeling`).
 3. **Install this collection**: `npx skills add tymkiwdylan/skills -s create-tickets implement-tickets verify setup-workflow grilling grill-with-docs domain-modeling review-diff -a claude-code codex -y`.
 4. **Install upstream**: one `npx skills add <source> -s <skill> <skill> … -a claude-code codex -y` per source in `upstream.json`. Both commands write `skills-lock.json`; commit it so `npx skills update -p` and `npx skills experimental_install` work for the team.
 5. **Labels**: create the agreed labels that don't exist yet in the tracker (Linear `create_issue_label`, `gh label create`). Creating labels is authorized by this skill; renaming or deleting existing ones is not.
