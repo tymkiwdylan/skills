@@ -42,6 +42,7 @@ Before the first wave, when tickets share unfamiliar ground (a subsystem, an ext
 - Dispatch write-heavy tickets to workers in their own worktrees, each starting from the current remote feature branch on one unique ticket branch, as the harness reference describes.
 - Use read-only subagents for exploration, focused review or test analysis.
 - Never let two write-capable workers share a checkout or a branch.
+- Stamp every ticket's tracker identifier (Linear `ABC-231`, GitHub `#42`, the ticket ID on local markdown) into what you start for it: title each worker or reviewer subagent, task or thread `<tracker-id> <short purpose>`, identifier first (`ABC-231 implement`, `ABC-231 review standards`), and use the tracker's branch name (Linear `gitBranchName`) as its branch. Work tied to no single ticket, such as exploration or the feature-branch review, keeps a plain descriptive title.
 - Parallelize only when the tickets' ownership and shared-file contracts make it safe; shrink the wave when actual overlap contradicts the map.
 - Don't start a dependent wave because a prerequisite PR exists; wait until it is reviewed and merged.
 
@@ -61,7 +62,7 @@ Use the worker prompt and PR template from the protocol reference. Give workers 
 The parent personally reviews every ticket PR. `review-diff` and other review subagents add evidence; they don't replace the parent's judgment.
 
 1. Confirm the PR's base is the feature branch and its branch holds only the assigned ticket.
-2. Run `review-diff` on the PR, with the ticket as the spec. Then review the full diff and commits yourself against the acceptance criteria, repository invariants, authorization boundaries, failure behaviour, migrations and test coverage, weighing its findings rather than forwarding them unread.
+2. Run `review-diff` on the PR, with the ticket and its tracker identifier as the spec. Then review the full diff and commits yourself against the acceptance criteria, repository invariants, authorization boundaries, failure behaviour, migrations and test coverage, weighing its findings rather than forwarding them unread.
 3. Run focused checks, and verify the demonstration when relevant.
 4. Send concrete, prioritized findings to the original worker, which fixes the same branch with new commits and reports fresh evidence.
 5. Re-review the change. Repeat until no actionable findings remain.
