@@ -31,7 +31,9 @@ On GitHub, states without a native equivalent are labels (`in-progress`, `in-rev
 
 Promote dependents to `Todo` right after each merge, so the next wave is visible. Don't move `gate`, `HITL`, `external-blocked` or `deferred` tickets to `In Progress` for a worker. For a `HITL` ticket, the parent may attach prepared evidence and leave it assigned to the engineer.
 
-**Branches and PRs.** Name ticket branches per `workflow.md`, falling back to the tracker's branch name or `feat/<ticket-id-lowercase>` (for example `feat/m2-b1-t03`). Put both the ticket ID and the tracker identifier in the PR title: `M2-B1-T03 (ABC-231): home pricing and closing CTA`.
+**Branches and PRs.** Name ticket branches with the tracker's branch name (Linear `gitBranchName` from `get_issue`), so the branch carries the identifier and the tracker links it. When the tracker has none, follow `workflow.md`, falling back to `feat/<ticket-id-lowercase>` (for example `feat/m2-b1-t03`). Put both the ticket ID and the tracker identifier in the PR title: `M2-B1-T03 (ABC-231): home pricing and closing CTA`.
+
+**Agent and thread titles.** Title every subagent, delegated task or thread started for a ticket `<tracker identifier> <short purpose>`, with the identifier as the first token: `ABC-231 implement`, `ABC-231 review standards`, `ABC-231 review spec`, `ABC-231 fix round 2`. Tools group threads by that token. Workers apply the same rule to anything they start. Work tied to no single ticket keeps a plain descriptive title.
 
 **Scope changes.** When review shows a ticket is wrong or incomplete, comment the defect on the ticket and create or update tickets only within accepted scope. New scope needs the engineer: record it as a `HITL` ticket.
 
@@ -45,7 +47,8 @@ Read the ticket per docs/agents/issue-tracker.md; do not change its state,
 labels or relations. Reference {tracker identifier} in the PR.
 Repository checkout: {isolated absolute worktree path}.
 Start commit: {current remote feature branch SHA}.
-Your unique branch: {ticket branch}. PR base: {feature branch}.
+Your unique branch: {ticket branch, the tracker's branch name}. PR base: {feature branch}.
+Title any subagent or thread you start "{tracker identifier} <short purpose>".
 Read {applicable AGENTS.md / CLAUDE.md paths}, docs/agents/workflow.md and {authoritative source paths}.
 Exploration notes, if any: {path outside the repo}; read them before exploring yourself.
 Acceptance and demonstration: {ticket criteria or exact source location}.

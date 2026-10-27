@@ -59,6 +59,8 @@ Each smell reads *what it is* → *how to fix*; match it against the diff:
 
 Issue both sub-agent calls together, in the foreground, and aggregate the reports they return.
 
+When the spec is a tracker ticket (step 2), title the sub-agents `<tracker-id> review standards` and `<tracker-id> review spec`, identifier first (for example `ABC-231 review spec`), so tools can group them with the ticket. Otherwise title them `review standards` and `review spec`.
+
 **Standards sub-agent prompt** should include:
 
 - The full diff command and commit list.

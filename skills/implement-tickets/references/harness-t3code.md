@@ -4,17 +4,19 @@ Applies when `docs/agents/workflow.md` says `Harness: t3code`. T3 tools may carr
 
 ## Dispatching workers
 
-Workers are subagents owned by the parent thread, never new top-level threads. Use `t3_thread_launch` only when the engineer explicitly asks for separate threads.
+Workers are subagents owned by the parent thread, never new top-level threads. Use `t3_thread_launch` only when the engineer explicitly asks for separate threads; then set `title` to `<tracker-id> implement` and `workspaceStrategy.branch` to the ticket branch.
 
-- **Same model as the parent:** the native `Agent` tool with `isolation: "worktree"` and `run_in_background: true`. Launch a wave's workers in one message so they run concurrently.
-- **Another model or provider:** `delegate_task` with `isolation: "worktree"`, a target from `orchestrator_capabilities`, and a stable `clientRequestId` per ticket and round. Keep each returned `taskId`; manage it with `task_status` and `task_cancel`.
+Every title starts with the ticket's tracker identifier, per the protocol reference.
+
+- **Same model as the parent:** the native `Agent` tool with `description: "<tracker-id> implement"` (for example `ABC-231 implement`), `isolation: "worktree"` and `run_in_background: true`. Launch a wave's workers in one message so they run concurrently.
+- **Another model or provider:** `delegate_task` with `title: "<tracker-id> implement"`, `isolation: "worktree"`, a target from `orchestrator_capabilities`, and a stable `clientRequestId` per ticket and round that starts with the identifier (`ABC-231-r1`). Keep each returned `taskId`; manage it with `task_status` and `task_cancel`.
 
 Both isolations start from the parent's local commit, and uncommitted edits are not copied. So the worker prompt's first step is `git fetch origin && git switch -c <ticket-branch> origin/<feature-branch>`. Each worktree also starts without gitignored env files; when tickets need them, list the files to copy from the main checkout (the first path in `git worktree list`) and say their values never go into output or commits.
 
 ## Review rounds
 
 - **Native subagent:** continue the same worker with `SendMessage`, so it keeps its worktree and context.
-- **`delegate_task`:** each round is a new `delegate_task` call with the original brief, the prior findings, the worker's responses and any unresolved objections, plus "check out `<ticket-branch>` from origin and continue on it". Use a new `clientRequestId` per round. Don't use `t3_thread_send` on the child thread.
+- **`delegate_task`:** each round is a new `delegate_task` call with the original brief, the prior findings, the worker's responses and any unresolved objections, plus "check out `<ticket-branch>` from origin and continue on it". Use a new `clientRequestId` (`ABC-231-r2`) and the title `<tracker-id> fix round <n>` per round. Don't use `t3_thread_send` on the child thread.
 
 ## Pull requests
 

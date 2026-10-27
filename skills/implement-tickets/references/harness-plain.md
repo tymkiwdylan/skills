@@ -12,7 +12,7 @@ Applies when `docs/agents/workflow.md` says `Harness: plain`, or when the T3 too
    ```
 
 2. Copy the gitignored env files the ticket needs from the main checkout into the worktree, and tell the worker their values never go into output or commits.
-3. Start a worker in that directory with whatever the harness offers: a background subagent whose working directory is the worktree, or a separate agent task (for example a Codex worktree task). Give it the worker prompt from the protocol reference.
+3. Start a worker in that directory with whatever the harness offers: a background subagent whose working directory is the worktree, or a separate agent task (for example a Codex worktree task). Give it the worker prompt from the protocol reference, and name it `<tracker-id> implement` wherever the harness takes a title or name.
 4. When the harness can't run write-capable workers in an isolated checkout, implement tickets one at a time yourself, each in its own worktree and branch. Say in the final report that the review wasn't independent.
 
 ## Review rounds
