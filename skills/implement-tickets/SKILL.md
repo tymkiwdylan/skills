@@ -1,6 +1,6 @@
 ---
 name: implement-tickets
-description: Implement an approved dependency-aware ticket map (from create-tickets, in the repo's configured tracker) through parallel worktree workers, ticket PRs, parent review and full-suite merge gates, keeping tracker status current and routing blockers to the engineer without stopping. Use when the requested outcome is a pushed feature branch ready for engineer review; do not use for ad-hoc single-file edits, and never treat it as production authorization.
+description: Implement an approved dependency-aware ticket map (from create-tickets, in the repo's configured tracker) through parallel worktree workers, ticket PRs, parent review and one full-suite gate per wave on the feature branch, keeping tracker status current and routing blockers to the engineer without stopping. Use when the requested outcome is a pushed feature branch ready for engineer review; do not use for ad-hoc single-file edits, and never treat it as production authorization.
 ---
 
 # Implement tickets through reviewed PRs
@@ -35,7 +35,7 @@ Invoking this skill for implementation authorizes branch creation and PR operati
 
 ## Execute dependency waves
 
-Respect the ticket DAG. The candidate wave is every `agent-ready` ticket in `Todo` whose blockers are all `Done`; confirm against the feature branch that each blocker's PR is actually merged before trusting the status.
+Respect the ticket DAG. The candidate wave is every `agent-ready` ticket in `Todo` whose blockers are all `Done`; confirm against the feature branch that each blocker's PR is actually merged, and that the wave gate covering it passed, before trusting the status.
 
 Before the first wave, when tickets share unfamiliar ground (a subsystem, an external API, a data shape), run one read-only exploration subagent that writes its notes outside the repo, at a path recorded in the integration record. Worker prompts point at those notes instead of having every worker explore again.
 
@@ -44,7 +44,7 @@ Before the first wave, when tickets share unfamiliar ground (a subsystem, an ext
 - Never let two write-capable workers share a checkout or a branch.
 - Stamp every ticket's tracker identifier (Linear `ABC-231`, GitHub `#42`, the ticket ID on local markdown) into what you start for it: title each worker or reviewer subagent, task or thread `<tracker-id> <short purpose>`, identifier first (`ABC-231 implement`, `ABC-231 review standards`), and use the tracker's branch name (Linear `gitBranchName`) as its branch. Work tied to no single ticket, such as exploration or the feature-branch review, keeps a plain descriptive title.
 - Parallelize only when the tickets' ownership and shared-file contracts make it safe; shrink the wave when actual overlap contradicts the map.
-- Don't start a dependent wave because a prerequisite PR exists; wait until it is reviewed and merged.
+- Don't start a dependent wave because a prerequisite PR exists; wait until it is reviewed, merged and its wave gate has passed.
 
 Every worker must:
 
@@ -82,26 +82,34 @@ A missing business decision, external input, credential or production authorizat
 
 Never resolve a blocker by inference, never relabel a `gate`, `HITL` or `deferred` ticket as `agent-ready`, and never treat a tracker state, comment or label as production authorization.
 
-## Full-suite merge gate
+## Merging ticket PRs
 
-A ticket PR merges only when:
+Ticket PRs don't run the full suite. A ticket PR merges when:
 
 - every review finding is resolved;
-- the PR is current with the latest feature branch after earlier merges in the wave;
+- the worker's `verify` block shows `VERDICT=PASS` for the PR's current head;
 - required CI checks pass;
-- the full suite from `workflow.md` passes on the exact candidate (PR head integrated into the latest feature branch);
+- it merges into the latest feature branch without conflicts;
 - the parent has verified the ticket's acceptance and handoff evidence.
 
-Prove the exact candidate in an isolated integration worktree, whether or not CI exists, unless a repository mechanism already proves it. Never weaken, skip or redefine the suite to merge. When the suite is flaky or unavailable, keep the PR unmerged and report the blocker.
+A PR doesn't need to be rebased onto earlier merges in the wave unless it conflicts; a conflict goes back to the worker. Merge ready PRs as they clear review, one at a time, with the merge strategy from `workflow.md`.
 
-Merge ticket PRs one at a time with the merge strategy from `workflow.md`. After each merge, update the remote feature branch and refresh the remaining PRs before their gate. After every wave, run the full suite on the feature branch before opening the next wave.
+## Wave gate
+
+The full suite from `workflow.md` runs once per wave, on the feature branch after the wave's last PR merges, not on each ticket PR.
+
+1. Run the full suite in an isolated worktree on the feature-branch head, and record that SHA, the wave's merge SHAs and the results.
+2. On failure, find the ticket that caused it: the failing output usually names the files, and otherwise `git bisect run` over the wave's merge commits with the failing command finds it. Send the failure to that ticket's worker, which opens a follow-up fix PR against the feature branch (merged after review, like any ticket PR). Revert the merge instead when the fix isn't quick or would block the next wave for long.
+3. Rerun the full suite on the new head. Repeat until it passes.
+
+The next wave starts only on a green feature branch. Never weaken, skip or redefine the suite to pass it. When the suite is flaky or unavailable, hold the next wave and report the blocker.
 
 ## Finish for engineer review
 
 After every in-scope repository ticket is merged:
 
-1. Run the full suite on the final feature branch and verify the plan's integrated demonstration.
-2. Run `review-diff` on the whole feature branch against the base, with the spec as its spec. Ticket reviews can't see problems that only appear across tickets. Route actionable findings to a worker as a follow-up ticket PR through the same merge gate.
+1. Make sure the last wave gate passed on the final feature-branch head (rerun it if anything merged since), and verify the plan's integrated demonstration.
+2. Run `review-diff` on the whole feature branch against the base, with the spec as its spec. Ticket reviews can't see problems that only appear across tickets. Route actionable findings to a worker as a follow-up ticket PR, then rerun the wave gate.
 3. Confirm ticket-to-PR traceability, no unresolved review comments, and no accidental deferred scope.
 4. Push the final feature branch.
 5. Open or update a draft aggregate PR from the feature branch to the base branch, and leave it unmerged.
