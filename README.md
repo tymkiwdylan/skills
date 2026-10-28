@@ -8,7 +8,7 @@ Skills para implementar software con agentes: planificar, implementar en worktre
 | --- | --- |
 | [`setup-workflow`](skills/setup-workflow/SKILL.md) | Configura un repo: harness, tracker, labels, documentación de dominio, convenciones y gates de verify. Instala todo lo de abajo. Se ejecuta a mano (`/setup-workflow`). |
 | [`create-tickets`](skills/create-tickets/SKILL.md) | Convierte un plan aprobado en un mapa de tickets con dependencias, en Linear, GitHub Issues o markdown local. |
-| [`implement-tickets`](skills/implement-tickets/SKILL.md) | Implementa un mapa de tickets con workers en worktrees paralelos, revisión del agente principal y gates de merge con la suite completa. |
+| [`implement-tickets`](skills/implement-tickets/SKILL.md) | Implementa un mapa de tickets con workers en worktrees paralelos, revisión del agente principal y la suite completa una vez por ola en la rama de integración. |
 | [`verify`](skills/verify/SKILL.md) | Mapea el diff a los gates obligatorios del repo, los ejecuta e imprime un veredicto en el que un revisor puede confiar. |
 | [`review-diff`](skills/review-diff/SKILL.md) | Revisa un diff, una rama o un PR en dos ejes separados, estándares y spec, con subagentes en paralelo. `implement-tickets` lo corre en cada PR de ticket y sobre la rama de feature terminada. Adaptado de `code-review` de Matt Pocock. |
 | [`grilling`](skills/grilling/SKILL.md) | Te entrevista sobre un plan en rondas, recorriendo un árbol de diseño, con una respuesta recomendada para cada pregunta. De Matt Pocock. |
@@ -41,7 +41,7 @@ Las skills marcadas como *manual* se invocan con `/nombre` en Claude Code (`$nom
    - Si la respuesta la tiene otra persona (un cliente, un experto): `/to-questionnaire` arma el documento para mandarle.
 2. **Escribir la spec.** En la misma conversación, `/to-spec`. No pregunta nada nuevo: sintetiza lo hablado y lo publica en el tracker.
 3. **Crear los tickets.** `/create-tickets <spec>`, en la misma conversación o en una nueva (lee la spec del tracker). Revisar el mapa: dependencias, clasificación (`agent-ready`, `HITL`, `gate`…) y las `client-question` abiertas.
-4. **Implementar.** `/implement-tickets <spec o proyecto>`, mejor en una conversación nueva. Trabaja por olas: un PR por ticket hacia la rama de integración, revisado con `review-diff` y mergeado solo con la suite completa en verde. Un bloqueo queda en su ticket con label `HITL` (con un script de `wizard` si es un procedimiento manual) y el resto sigue. Si la sesión se corta, una nueva retoma desde el registro de integración.
+4. **Implementar.** `/implement-tickets <spec o proyecto>`, mejor en una conversación nueva. Trabaja por olas: un PR por ticket hacia la rama de integración, revisado con `review-diff` y mergeado con su bloque de `verify` en verde. La suite completa corre una vez por ola sobre la rama de integración, y la ola siguiente arranca solo con ella en verde. Un bloqueo queda en su ticket con label `HITL` (con un script de `wizard` si es un procedimiento manual) y el resto sigue. Si la sesión se corta, una nueva retoma desde el registro de integración.
 5. **Revisar y mergear.** Termina con un PR en borrador de la rama de integración hacia la base. Ese merge lo hace una persona.
 
 ### Bug

@@ -4,7 +4,7 @@ Operational record and templates for `SKILL.md`, which stays authoritative.
 
 ## Integration record
 
-Before dispatch, record: the repository path and remote, the pushed base ref and SHA, the feature branch, the ticket source, the authoritative source paths, the exact full-suite commands, CI requirements, and the merge strategy. Per ticket, track dependencies, owner, classification, worker checkout and branch, PR, review findings, candidate SHA, verification result and merge SHA.
+Before dispatch, record: the repository path and remote, the pushed base ref and SHA, the feature branch, the ticket source, the authoritative source paths, the exact full-suite commands, CI requirements, and the merge strategy. Per ticket, track dependencies, owner, classification, worker checkout and branch, PR, review findings, the `verify` verdict and head SHA it covers, and merge SHA. Per wave, track the merged tickets, the feature-branch SHA the full suite ran on, its result, and any fix PRs or reverts.
 
 Keep externally blocked implementation separate from live operational gates. Neither makes incomplete implementation review-ready. Leave uncommitted source documents in place; when workers need them, give exact paths or a read-only snapshot rather than bringing unrelated changes into PRs.
 
@@ -24,12 +24,13 @@ Use the operations in `docs/agents/issue-tracker.md` and the label strings in `d
 | Worker dispatched | `In Progress`; assignee = the agent user where the tracker has one; comment with the branch and start SHA |
 | Ticket PR opened | Link the PR; `In Review` where that state exists, otherwise stay `In Progress` |
 | Review findings sent | Comment summarizing them (no secrets or real data) |
-| Merged after the full-suite gate | `Done`; comment with the merge SHA and the gate evidence |
+| Ticket PR merged | `Done`; comment with the merge SHA and the `verify` evidence |
+| Wave gate failed on a ticket | Comment the failure and the fix PR or revert on that ticket; back to `In Progress` when reverted |
 | Blocked | The blocker protocol in `SKILL.md`; never `Canceled` |
 
 On GitHub, states without a native equivalent are labels (`in-progress`, `in-review`), and `Done` is closing the issue as completed. On local markdown, they are the `Status:` line.
 
-Promote dependents to `Todo` right after each merge, so the next wave is visible. Don't move `gate`, `HITL`, `external-blocked` or `deferred` tickets to `In Progress` for a worker. For a `HITL` ticket, the parent may attach prepared evidence and leave it assigned to the engineer.
+Promote dependents to `Todo` once the wave gate passes, so the next wave is visible. Don't move `gate`, `HITL`, `external-blocked` or `deferred` tickets to `In Progress` for a worker. For a `HITL` ticket, the parent may attach prepared evidence and leave it assigned to the engineer.
 
 **Branches and PRs.** Name ticket branches with the tracker's branch name (Linear `gitBranchName` from `get_issue`), so the branch carries the identifier and the tracker links it. When the tracker has none, follow `workflow.md`, falling back to `feat/<ticket-id-lowercase>` (for example `feat/m2-b1-t03`). Put both the ticket ID and the tracker identifier in the PR title: `M2-B1-T03 (ABC-231): home pricing and closing CTA`.
 
@@ -55,7 +56,7 @@ Acceptance and demonstration: {ticket criteria or exact source location}.
 Owned files/modules: {ownership}. Shared contracts: {stable contracts}.
 Prerequisites already merged: {tickets and merge SHAs}.
 Focused checks: {existing relevant commands}.
-Full-suite commands: {from workflow.md}.
+The parent runs the full suite once per wave on the feature branch; don't run it yourself.
 Preserve unrelated changes; implement only this ticket. Do not change scope,
 weaken checks, merge into the base branch, or run production actions.
 If a prerequisite or business decision is missing, report it before guessing.
@@ -90,25 +91,24 @@ Risks and remaining work:
 {magic word from workflow.md, e.g. Fixes ABC-231}
 ```
 
-Never claim the parent's integration gate passed from worker-only checks.
+A ticket PR carries worker evidence only. Never claim the wave gate passed from it.
 
-## Exact-candidate gate
+## Merge and wave gate
 
 Review every commit and the full diff against the ticket. Send findings to the original worker with severity, affected code, the observed failure, and the required behaviour or verification. Re-review the fixes.
 
-For each proposed merge:
+Before each merge, check that the PR's `verify` block covers its current head; a push after the verify run makes it stale, and the worker reruns it. Unresolved findings, a stale or failing verdict, failing CI or a conflict keep the PR unmerged.
 
-1. `git fetch origin`, then record the feature head and ticket head SHAs.
-2. Build the candidate in a throwaway worktree with the agreed merge strategy: `git worktree add --detach <tmp> origin/<feature>`, then `git merge --squash origin/<ticket-branch>` (squash) or `git merge --no-ff --no-commit origin/<ticket-branch>` (merge commit). A conflict means the worker must update its branch first.
-3. Run the full suite there and record both source SHAs, the candidate tree and the results. Remove the worktree afterwards.
-4. If either head moves before the merge, the evidence is stale: rebuild and rerun.
+After the wave's last merge:
 
-Unresolved findings, failing checks, conflicts or unavailable required verification keep the PR unmerged.
+1. `git fetch origin`, then `git worktree add --detach <tmp> origin/<feature>` and record the head SHA.
+2. Run the full suite there and record the SHA and the results. Remove the worktree afterwards.
+3. On failure, attribute it to a ticket (bisect the wave's merges when the output doesn't make it obvious), route it to that worker as a fix PR or revert the merge, and rerun on the new head.
 
-Merge one ticket at a time. Confirm the remote feature branch matches the tested candidate, refresh the other open PRs, and run the full suite on the feature branch after each wave. Leave the aggregate feature-to-base PR as an unmerged draft.
+Record each wave's result in the wave log. Leave the aggregate feature-to-base PR as an unmerged draft.
 
 ## Status and handoff
 
-Track each ticket as pending, implementing, under review, gate failed, merged, or externally blocked, with evidence rather than implied completion. Record live operational gates separately, as awaiting explicit authorization. The tracker's ticket states are the status record; mirror wave results into the integration record's wave log.
+Track each ticket as pending, implementing, under review, merged, failed its wave gate, or externally blocked, with evidence rather than implied completion. Record live operational gates separately, as awaiting explicit authorization. The tracker's ticket states are the status record; mirror wave results into the integration record's wave log.
 
 The final handoff names the base and feature refs, the aggregate draft PR, ticket-to-PR traceability, the final tested SHA, the exact checks, the demonstrations, and the remaining external gates or risks. Use `review-ready` only under the conditions in `SKILL.md`; otherwise `partial/blocked`, with the specific missing prerequisite.

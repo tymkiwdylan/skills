@@ -33,7 +33,7 @@ Tickets, PR titles and bodies, and commit subjects are written in **<language>**
 
 ## Full suite
 
-Commands that must pass on the exact merge candidate before a ticket PR merges:
+Commands that must pass on the integration branch after each wave of ticket PRs merges, before the next wave starts. Ticket PRs don't run them; they carry their `verify` block.
 
 ```bash
 <pnpm lint>
