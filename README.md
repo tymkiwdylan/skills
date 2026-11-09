@@ -117,6 +117,7 @@ Un agente va de un archivo cambiado a su contexto, y lee ese glosario y esos ADR
 `workflow.md` indica el harness, y `implement-tickets` se adapta:
 
 - **`t3code`**: T3 Code sobre Claude Code. Los workers son subagentes en worktrees, los PRs quedan vinculados al thread y el thread espera con `watch_pull_request` en lugar de hacer polling.
+- **`openbot`**: agentes de OpenBot. Los workers son subagentes en worktrees o compañeros de un canal, cada uno con su worktree declarado como recurso para que no se pisen. El CI se sigue con `gh pr checks --watch` en segundo plano, y las esperas largas con `await_event`.
 - **`plain`**: cualquier otro harness. Los workers trabajan en checkouts de `git worktree`, y el CI se sigue con `gh pr checks --watch`.
 
 ## Próximos pasos

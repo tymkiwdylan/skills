@@ -4,9 +4,10 @@ How work moves through this repo, from issue to merged PR. `create-tickets`, `im
 
 ## Harness
 
-**Harness: <t3code | plain>**
+**Harness: <t3code | openbot | plain>**
 
 - `t3code`: agents run in T3 Code on Claude Code. Skills use T3 orchestration (worktree subagents, `link_pull_request`, `watch_pull_request`).
+- `openbot`: agents run in OpenBot. Skills use worktree subagents or channel teammates (`channel_assign` with a worktree resource), background `gh pr checks --watch` and `await_event`.
 - `plain`: any other harness. Skills fall back to `git worktree`, `gh` and polling.
 
 ## Language

@@ -29,7 +29,7 @@ Read what exists; assume nothing.
 - `docs/agents/` and `.agents/config/`: earlier output of this skill or of `setup-matt-pocock-skills`. Update it in place.
 - `package.json` scripts (root and workspaces), `Makefile`, `justfile`, `pyproject.toml`, `Cargo.toml`, `go.mod`, and CI workflows: the real typecheck, lint, test and build commands, and which paths each covers.
 - Monorepo signals (`pnpm-workspace.yaml`, `workspaces`, a populated `packages/*`), `GLOSSARY.md` / `GLOSSARY-MAP.md`, `docs/adr/`.
-- Harness: whether `mcp__t3-code__*` tools (or `t3-code` MCP tools under another prefix) are available in this session.
+- Harness: whether `mcp__t3-code__*` tools (or `t3-code` MCP tools under another prefix) or OpenBot tools (`openbot.*`, or `mcp__openbot__*`) are available in this session.
 - Tracker access: Linear MCP servers in this session (`get_workspace` on each), or `gh auth status`.
 
 Done when you can propose an answer for every section below.
@@ -38,7 +38,7 @@ Done when you can propose an answer for every section below.
 
 Lead each section with the recommended answer so the user can accept it in a word. Skip a section the exploration settled, and say what you found instead.
 
-**A. Harness.** "Are you running agents through T3 Code?" Recommend `t3code` when T3 tools are available, `plain` otherwise. `t3code` means T3 Code on Claude Code; skills then use T3 worktree subagents and PR watching. `plain` falls back to `git worktree`, `gh` and polling.
+**A. Harness.** "Are you running agents through T3 Code or OpenBot?" Recommend `t3code` when T3 tools are available, `openbot` when OpenBot tools are, `plain` otherwise. `t3code` means T3 Code on Claude Code; skills then use T3 worktree subagents and PR watching. `openbot` means OpenBot agents; skills use worktree subagents or channel teammates, background CI watches and OpenBot waits. `plain` falls back to `git worktree`, `gh` and polling.
 
 **B. Issue tracker.** Linear, GitHub, local markdown, or other. Recommend the tracker the team already uses: a Linear server with matching issues in recent commits (`ABC-123`), otherwise the git remote's host, otherwise local markdown.
 - Linear: confirm the MCP server name, workspace `urlKey` (from `get_workspace`), team key, workflow states (`list_issue_statuses`) and project policy.

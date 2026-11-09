@@ -11,7 +11,7 @@ Before creating branches, workers or PRs, read:
 
 - `docs/agents/workflow.md`, `issue-tracker.md` and `triage-labels.md`. When they are missing, stop and ask the user to run `setup-workflow`.
 - [references/orchestration-protocol.md](references/orchestration-protocol.md): the integration record, tracker sync, worker prompt, PR template and exact-candidate gate.
-- The harness reference named by `workflow.md`: [references/harness-t3code.md](references/harness-t3code.md) for `Harness: t3code`, [references/harness-plain.md](references/harness-plain.md) for `Harness: plain`. It says how to dispatch workers, message them, watch PRs and notify.
+- The harness reference named by `workflow.md`: [references/harness-t3code.md](references/harness-t3code.md) for `Harness: t3code`, [references/harness-openbot.md](references/harness-openbot.md) for `Harness: openbot`, [references/harness-plain.md](references/harness-plain.md) for `Harness: plain`. It says how to dispatch workers, message them, watch PRs and notify.
 
 ## Required input
 
