@@ -4,11 +4,19 @@ Applies when `docs/agents/workflow.md` says `Harness: openbot`: the parent is an
 
 OpenBot agents share one computer and one filesystem, so every worker, native or teammate, gets its own worktree outside the main checkout.
 
+## Ending a turn
+
+In a goal channel, ending the parent's turn closes its channel task. Nothing wakes the parent later to continue the wave, so work left pending at that moment stalls silently.
+
+- Never end a turn while work you started is pending (running workers, PRs without a verification block or a review, unmerged tickets), unless something will wake you: a `channel_assign` you are waiting on, which the channel resumes when it returns, or a background shell command, which wakes you when it exits.
+- Native subagents running in the background do not keep the channel task open. Wait for them in the same turn (see Dispatching workers).
+- Finish every channel task with `openbot.channel_result`. If you must stop early (a usage limit, a blocker, a human decision), post a result that says what is done, what is pending and who has to act.
+
 ## Dispatching workers
 
 Every task or worker name starts with the ticket's tracker identifier, per the protocol reference.
 
-- **Same model as the parent:** when the parent's provider has a native subagent tool with worktree isolation (Claude: `Agent` with `description: "<tracker-id> implement"`, `isolation: "worktree"`, `run_in_background: true`), use it as in [harness-t3code.md](harness-t3code.md): launch a wave's workers in one message. The isolation starts from the parent's local commit, so the worker prompt's first step is `git fetch origin && git switch -c <ticket-branch> origin/<feature-branch>`.
+- **Same model as the parent:** when the parent's provider has a native subagent tool with worktree isolation (Claude: `Agent` with `description: "<tracker-id> implement"`, `isolation: "worktree"`, `run_in_background: false`), launch a wave's workers in one message so they run concurrently, and wait for all of them in the same turn. In a goal channel, don't run them in the background (see Ending a turn). The isolation starts from the parent's local commit, so the worker prompt's first step is `git fetch origin && git switch -c <ticket-branch> origin/<feature-branch>`.
 - **Another model, or a worker the engineer should see:** give the ticket to a teammate. Create the worktree first, as in the plain harness (`git worktree add ../<repo>-<ticket-id> -b <ticket-branch> origin/<feature-branch>`). Then:
   - in a goal channel, call `openbot.channel_assign` with the worker prompt as `task`, the PR and verify block as `expectedResult`, and `resources: ["workspace:<absolute worktree path>"]`. Tasks that declare the same worktree run one after the other; tasks on different worktrees run in parallel. Use `dependencies` for tickets that must wait.
   - outside a channel, call `openbot.send_message` with `expectsReply: true`, then end the turn; the reply arrives as a new turn.
@@ -25,7 +33,8 @@ Every task or worker name starts with the ticket's tracker identifier, per the p
 
 - Open PRs with `gh pr create --base <feature-branch> --head <ticket-branch>`. OpenBot has no thread-linked PR list: the tracker magic word in the PR body (`Refs ABC-231`) links the PR to the issue, and the PR URL goes in the channel result.
 - **Waiting for CI, up to about 15 minutes:** run `gh pr checks <n> --watch --fail-fast --interval 30` as a background command when the harness supports one (Claude: Bash with `run_in_background: true`); the agent wakes when the command exits. Don't loop with `sleep`.
-- **Longer waits, or waiting for a human review:** open `openbot.await_event` with a note naming the PRs and what to check, then end the turn. A run of the agent's PR-watch routine wakes it (pass its `routineId`). Without such a routine, report the pending checks and stop instead.
+- **Waiting for a teammate's review:** in a goal channel, assign the review with `openbot.channel_assign` and end the turn. The channel resumes the parent task when the review returns.
+- **Longer waits, or waiting for a human review:** open `openbot.await_event` with a note naming the PRs and what to check, then end the turn. A run of the agent's PR-watch routine wakes it (pass its `routineId`). Without such a routine, post a channel result with the pending checks and stop instead; never stop without one.
 - Read review comments with `gh pr view <n> --comments` and `gh api repos/<owner>/<repo>/pulls/<n>/comments`.
 
 ## Notifications
