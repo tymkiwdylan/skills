@@ -8,8 +8,9 @@ OpenBot agents share one computer and one filesystem, so every worker, native or
 
 In a goal channel, ending the parent's turn closes its channel task. Nothing wakes the parent later to continue the wave, so work left pending at that moment stalls silently.
 
-- Never end a turn while work you started is pending (running workers, PRs without a verification block or a review, unmerged tickets), unless something will wake you: a `channel_assign` you are waiting on, which the channel resumes when it returns, or a background shell command, which wakes you when it exits.
-- Native subagents running in the background do not keep the channel task open. Wait for them in the same turn (see Dispatching workers).
+- Never end a turn while work you started is pending (running workers, PRs without a verification block or a review, unmerged tickets), unless you are waiting on a `channel_assign`: the channel keeps the task open and resumes it when the assignment returns.
+- Native subagents and shell commands running in the background do not keep the channel task open. A background command still wakes the agent, but its task is already closed, so it can't report back through it. Wait for them in the same turn: launch subagents in the foreground (see Dispatching workers), and watch long shell runs, such as a queue of full-suite runs, with a bounded watch loop on their log.
+- If you must end the turn while something still runs, post a channel result first, with what is done, what is still running and what happens when it finishes.
 - Finish every channel task with `openbot.channel_result`. If you must stop early (a usage limit, a blocker, a human decision), post a result that says what is done, what is pending and who has to act.
 
 ## Dispatching workers
@@ -32,7 +33,7 @@ Every task or worker name starts with the ticket's tracker identifier, per the p
 ## Pull requests
 
 - Open PRs with `gh pr create --base <feature-branch> --head <ticket-branch>`. OpenBot has no thread-linked PR list: the tracker magic word in the PR body (`Refs ABC-231`) links the PR to the issue, and the PR URL goes in the channel result.
-- **Waiting for CI, up to about 15 minutes:** run `gh pr checks <n> --watch --fail-fast --interval 30` as a background command when the harness supports one (Claude: Bash with `run_in_background: true`); the agent wakes when the command exits. Don't loop with `sleep`.
+- **Waiting for CI, up to about 15 minutes:** in a goal channel, run `gh pr checks <n> --watch --fail-fast --interval 30` in the same turn. Outside a channel it may run as a background command (Claude: Bash with `run_in_background: true`); the agent wakes when the command exits. Don't loop with `sleep`.
 - **Waiting for a teammate's review:** in a goal channel, assign the review with `openbot.channel_assign` and end the turn. The channel resumes the parent task when the review returns.
 - **Longer waits, or waiting for a human review:** open `openbot.await_event` with a note naming the PRs and what to check, then end the turn. A run of the agent's PR-watch routine wakes it (pass its `routineId`). Without such a routine, post a channel result with the pending checks and stop instead; never stop without one.
 - Read review comments with `gh pr view <n> --comments` and `gh api repos/<owner>/<repo>/pulls/<n>/comments`.
