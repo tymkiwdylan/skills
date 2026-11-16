@@ -44,6 +44,7 @@ Build the full map in memory first, then check:
 - every dependency ID exists and the graph has no cycle;
 - every ticket has acceptance criteria and verification;
 - no ticket reaches into deferred scope or a possible future expansion;
+- no two tickets that can run in the same wave edit the same registration point (a catalog, route table, index or barrel file, enum, or the test that lists them). When several tickets each add an entry, add a first ticket that creates every entry as a stub and make the others blocked by it, or split the registry so each entry lives in its own file;
 - initial status is consistent: `Done` only with a merged PR whose blockers are `Done`; `Todo` only when every blocker is `Done`; everything else `Backlog`.
 
 ## Write to the tracker

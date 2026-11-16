@@ -57,6 +57,16 @@ Every worker must:
 
 Use the worker prompt and PR template from the protocol reference. Give workers exact paths and contracts instead of the whole parent conversation.
 
+### Small waves
+
+Workers, ticket branches and ticket PRs pay off on large or risky tickets. When every ticket in a wave is small (a few files, no migration, no authorization or data-model change), or the engineer asks for it, the parent implements the wave itself, one ticket after another, directly on the feature branch:
+
+- one conventional commit per ticket, carrying its tracker identifier, pushed right away;
+- focused tests for what the ticket touched, then the ticket moves to `Done` with the commit SHA;
+- `verify`, the wave gate and `review-diff` on the wave's diff run once, after the wave's last commit.
+
+Pick the mode per wave before dispatching, record it in the integration record, and tell the engineer the mode and why in one line. Large or risky tickets in a small wave still go to workers.
+
 ## Review and feedback loop
 
 The parent personally reviews every ticket PR. `review-diff` and other review subagents add evidence; they don't replace the parent's judgment.
