@@ -18,6 +18,10 @@ Both isolations start from the parent's local commit, and uncommitted edits are 
 - **Native subagent:** continue the same worker with `SendMessage`, so it keeps its worktree and context.
 - **`delegate_task`:** each round is a new `delegate_task` call with the original brief, the prior findings, the worker's responses and any unresolved objections, plus "check out `<ticket-branch>` from origin and continue on it". Use a new `clientRequestId` (`ABC-231-r2`) and the title `<tracker-id> fix round <n>` per round. Don't use `t3_thread_send` on the child thread.
 
+## Changing instructions mid-wave
+
+When the engineer changes the rules during a wave (skip a gate, narrow the scope, switch to a small wave), a worker only sees the change in a brief. A finished worker has no turn to steer, so `t3_thread_send` fails on it. Put the change in every later round's brief. For a worker still running whose output the change invalidates, `task_cancel` it and dispatch the next round with the new brief.
+
 ## Pull requests
 
 - Call `link_pull_request` with the full URL for every ticket PR and for the aggregate PR as soon as it exists. Before finishing, `list_thread_pull_requests` and link any that are missing. If linking fails, report it.
